@@ -3446,3 +3446,220 @@ footer small { color: #BDAEA3; font-size: 11px; }
         width: 100%;
     }
 }
+
+
+/* ==========================================
+   REUSE CAMPUS — MOBILE REFINEMENT
+   Preserve desktop design.
+========================================== */
+
+@media (max-width: 650px) {
+
+    /* Overall horizontal overflow protection */
+    html,
+    body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    /* Navigation */
+    .site-nav {
+        padding: 14px 20px;
+    }
+
+    .site-nav .nav-toggle {
+        width: 48px;
+        height: 48px;
+    }
+
+    /* Homepage hero */
+    .home-hero {
+        padding: 34px 22px 28px;
+        gap: 28px;
+    }
+
+    .home-hero__copy {
+        width: 100%;
+        max-width: 100%;
+        gap: 22px;
+    }
+
+    /* Eyebrow / introductory text */
+    .home-hero__copy > p:first-child {
+        font-size: 0.78rem;
+        line-height: 1.6;
+        letter-spacing: 0.11em;
+    }
+
+    /* Main headline */
+    .home-hero h1 {
+        font-size: clamp(2.85rem, 11vw, 4rem);
+        line-height: 0.99;
+        letter-spacing: -0.055em;
+        max-width: 100%;
+        margin: 0;
+        overflow-wrap: break-word;
+    }
+
+    /* Hero description */
+    .home-hero__description {
+        font-size: 1rem;
+        line-height: 1.75;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    /* Search box */
+    .home-search {
+        width: 100%;
+        min-width: 0;
+        min-height: 62px;
+        margin-top: 4px;
+    }
+
+    .home-search input {
+        min-width: 0;
+        width: 100%;
+        font-size: 0.92rem;
+        padding: 14px 12px;
+    }
+
+    .home-search button {
+        min-width: 100px;
+        padding: 13px 15px;
+        font-size: 0.88rem;
+        white-space: nowrap;
+    }
+
+    /* Hero action links */
+    .home-hero__links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 22px;
+        align-items: flex-start;
+    }
+
+    .home-hero__links a {
+        font-size: 0.92rem;
+        line-height: 1.6;
+    }
+
+    /* Values / manifesto section */
+    .home-manifesto {
+        padding: 30px 22px;
+        gap: 18px;
+    }
+
+    .home-manifesto > p {
+        font-size: 0.95rem;
+        line-height: 1.7;
+    }
+
+    .home-manifesto h2 {
+        font-size: clamp(1.8rem, 8vw, 2.5rem);
+        line-height: 1.1;
+    }
+
+    .home-manifesto > span {
+        font-size: 0.7rem;
+        line-height: 1.7;
+        letter-spacing: 0.12em;
+    }
+
+    /* Hero illustration */
+    .home-hero__art {
+        width: 100%;
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    .home-art__still-life {
+        width: 100%;
+        max-width: 100%;
+        min-height: 230px;
+        margin: 0 auto;
+    }
+
+    /* General page spacing */
+    .editorial-page {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    /* General headings */
+    .editorial-heading {
+        gap: 12px;
+    }
+
+    /* Form layouts */
+    .editorial-form-card {
+        width: 100%;
+        padding: 22px 18px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .editorial-form input,
+    .editorial-form select,
+    .editorial-form textarea {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-actions {
+        flex-wrap: wrap;
+    }
+
+    .form-actions .editorial-button,
+    .form-actions .editorial-cancel {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Avoid oversized cards */
+    .home-category-grid,
+    .home-product-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+/* Smaller phones */
+@media (max-width: 390px) {
+
+    .home-hero {
+        padding-left: 18px;
+        padding-right: 18px;
+        gap: 23px;
+    }
+
+    .home-hero h1 {
+        font-size: 2.7rem;
+        line-height: 1;
+    }
+
+    .home-hero__description {
+        font-size: 0.94rem;
+        line-height: 1.7;
+    }
+
+    .home-search button {
+        min-width: 88px;
+        padding: 12px 10px;
+    }
+
+    .home-search input {
+        font-size: 0.85rem;
+    }
+
+    .home-manifesto {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+}
