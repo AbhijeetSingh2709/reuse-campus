@@ -1,0 +1,108 @@
+
+{% extends 'base.html' %}
+{% block title %}Request to Rent — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">BORROW SOMETHING USEFUL</span>
+        <h1>Make it yours, <em>for a while.</em></h1>
+        <p>Choose your rental dates and send a request to the owner.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <div class="form-card-intro">
+            <span class="eyebrow">YOUR SELECTED ITEM</span>
+            <h2>{{ item.title }}</h2>
+            <div class="item-summary">
+                <p class="item-summary-price">{{ item.get_display_price }}</p>
+                <p>Listed by {{ item.owner.get_full_name|default:item.owner.username }}</p>
+            </div>
+        </div>
+
+        <div class="form-notice">
+            Your rental request will be reviewed by the owner. Contact information is shared only after approval.
+        </div>
+
+        <form method="POST" class="editorial-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="{{ form.start_date.id_for_label }}">Start date</label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}<p class="field-error">{{ form.start_date.errors }}</p>{% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.end_date.id_for_label }}">End date</label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}<p class="field-error">{{ form.end_date.errors }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div id="cost-preview" class="cost-preview" hidden>
+                <span class="eyebrow">ESTIMATED RENTAL COST</span>
+                <strong id="cost-amount">₹0</strong>
+                <p id="cost-days"></p>
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.message.id_for_label }}">A message to the owner <span>(optional)</span></label>
+                {{ form.message }}
+                {% if form.message.errors %}<p class="field-error">{{ form.message.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'item_detail' item.pk %}" class="editorial-cancel">Go back</a>
+                <button type="submit" class="editorial-button">Send rental request <span>↗</span></button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rentPerDay = Number("{{ item.rent_per_day|default_if_none:'0' }}");
+    const startInput = document.getElementById("id_start_date");
+    const endInput = document.getElementById("id_end_date");
+    const preview = document.getElementById("cost-preview");
+    const amount = document.getElementById("cost-amount");
+    const daysText = document.getElementById("cost-days");
+
+    if (!startInput || !endInput || !preview || !amount || !daysText) return;
+
+    function updateCost() {
+        if (!startInput.value || !endInput.value) {
+            preview.hidden = true;
+            return;
+        }
+
+        const start = new Date(startInput.value + "T00:00:00");
+        const end = new Date(endInput.value + "T00:00:00");
+
+        if (isNaN(start) || isNaN(end) || end <= start) {
+            preview.hidden = true;
+            return;
+        }
+
+        const days = Math.round((end - start) / 86400000);
+        const total = days * rentPerDay;
+
+        amount.textContent = "₹" + total.toFixed(2);
+        daysText.textContent = days + " rental day" + (days === 1 ? "" : "s");
+        preview.hidden = false;
+    }
+
+    startInput.addEventListener("change", updateCost);
+    endInput.addEventListener("change", updateCost);
+    updateCost();
+});
+</script>
+{% endblock %}

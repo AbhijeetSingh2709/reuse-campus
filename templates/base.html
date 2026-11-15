@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Buy, sell and rent essentials with students around your campus.">
+    <meta name="theme-color" content="#FAF4E9">
+
+    <title>{% block title %}ReUse Campus{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=5">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<header>
+    <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-brand" href="{% url 'home' %}" aria-label="ReUse Campus home">ReUse Campus<span>.</span></a>
+
+        <button class="nav-toggle" type="button"
+                aria-label="Open navigation menu"
+                aria-expanded="false"
+                aria-controls="primary-navigation">
+            <span aria-hidden="true">☰</span>
+        </button>
+
+        <div class="nav-links" id="primary-navigation">
+            <a class="nav-link" href="{% url 'explore' %}">Explore</a>
+            <a class="nav-link" href="{% url 'board' %}">Request Board</a>
+
+            {% if request.user.is_authenticated %}
+                <a class="nav-cta" href="{% url 'post_item' %}">＋ Sell Something</a>
+                <a class="nav-link" href="{% url 'dashboard' %}">
+                    {{ request.user.first_name|default:request.user.username }}
+                </a>
+                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+            {% else %}
+                <a class="nav-link" href="{% url 'login' %}">Login</a>
+                <a class="nav-cta" href="{% url 'register' %}">Get Started <span aria-hidden="true">↗</span></a>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+
+{% if messages %}
+<div class="messages-container" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="message message--{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<main id="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <p>ReUse Campus<span>.</span></p>
+    <nav aria-label="Footer navigation">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'explore' %}">Explore</a>
+        <a href="{% url 'board' %}">Request Board</a>
+    </nav>
+    <small>© 2026 ReUse Campus. Made for students.</small>
+</footer>
+
+<script src="{% static 'js/main.js' %}?v=2"></script>
+<script>
+    // Small progressive-enhancement fallback for the responsive navigation.
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggle = document.querySelector(".nav-toggle");
+        const menu = document.querySelector("#primary-navigation");
+        if (!toggle || !menu) return;
+
+        toggle.addEventListener("click", function () {
+            const isOpen = toggle.getAttribute("aria-expanded") === "true";
+            toggle.setAttribute("aria-expanded", String(!isOpen));
+            toggle.setAttribute("aria-label", isOpen ? "Open navigation menu" : "Close navigation menu");
+            menu.classList.toggle("is-open", !isOpen);
+            toggle.querySelector("span").textContent = isOpen ? "☰" : "×";
+        });
+    });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

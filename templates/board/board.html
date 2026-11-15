@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}Request Board — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="board-page">
+
+    <!-- Editorial hero -->
+    <div class="board-masthead">
+        <div class="board-masthead__copy">
+            <span class="editorial-eyebrow">
+                <span></span> THE CAMPUS COMMUNITY BOARD
+            </span>
+
+            <h1>Ask the campus.<br><em>Someone might have it.</em></h1>
+
+            <p>
+                Looking for something you can't find? Put it out there.
+                Your next useful connection could be just a few blocks away.
+            </p>
+        </div>
+
+        <aside class="board-masthead__aside">
+            <span class="board-aside__asterisk">✳</span>
+            <p>One person's<br><em>extra</em> is another<br>person's essential.</p>
+            <small>GOOD THINGS CIRCULATE</small>
+        </aside>
+
+        <div class="board-masthead__action">
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'post_board_request' %}" class="board-primary-button">
+                    Post a request <span>↗</span>
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="board-primary-button">
+                    Login to post <span>↗</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="board-toolbar">
+        <div class="board-toolbar__label">
+            <span class="board-section-index">01 / COMMUNITY WANTS</span>
+            <h2>What's being asked for</h2>
+        </div>
+
+        <form method="GET" action="{% url 'board' %}" class="board-filters">
+
+            <label class="board-select-wrap">
+                <span class="sr-only">Filter by category</span>
+
+                <select name="category" aria-label="Filter by category">
+                    <option value="">All categories</option>
+
+                    {% for value, label in categories %}
+                        <option value="{{ value }}"
+                            {% if selected_category == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <span aria-hidden="true">⌄</span>
+            </label>
+
+            <label class="board-checkbox">
+                <input
+                    type="checkbox"
+                    name="fulfilled"
+                    value="1"
+                    {% if show_fulfilled %}checked{% endif %}
+                >
+                <span class="board-checkbox__mark"></span>
+                Include fulfilled
+            </label>
+
+            <button type="submit" class="board-filter-button">
+                Apply filters <span>→</span>
+            </button>
+
+            <a href="{% url 'board' %}" class="board-clear-link">Reset</a>
+        </form>
+    </div>
+
+    <div class="board-listing-meta">
+        <span>COMMUNITY REQUESTS</span>
+        <span>SHARED NEEDS, SHARED FINDS</span>
+    </div>
+
+    <!-- Request cards -->
+    <div class="board-grid">
+
+        {% for br in board_requests %}
+            <article class="board-card {% if br.is_fulfilled %}board-card--fulfilled{% endif %}">
+
+                <div class="board-card__topline">
+                    <span class="board-card__category">
+                        {{ br.get_category_display }}
+                    </span>
+
+                    {% if br.is_fulfilled %}
+                        <span class="board-card__status">
+                            <i></i> Fulfilled
+                        </span>
+                    {% else %}
+                        <span class="board-card__number">
+                            REQUEST / {{ forloop.counter|stringformat:"02d" }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h3>{{ br.title }}</h3>
+
+                {% if br.description %}
+                    <p class="board-card__description">
+                        {{ br.description }}
+                    </p>
+                {% endif %}
+
+                <div class="board-card__bottom">
+                    <div class="board-card__person">
+                        <span class="board-card__avatar">
+                            {{ br.posted_by.get_full_name|default:br.posted_by.username|slice:":1"|upper }}
+                        </span>
+
+                        <span>
+                            <small>ASKED BY</small>
+                            <a href="{% url 'profile' br.posted_by.username %}">
+                                {{ br.posted_by.get_full_name|default:br.posted_by.username }}
+                            </a>
+                        </span>
+                    </div>
+
+                    <time>{{ br.created_at|date:"d M Y" }}</time>
+                </div>
+
+                {% if request.user == br.posted_by and not br.is_fulfilled %}
+                    <form
+                        method="POST"
+                        action="{% url 'fulfill_request' br.pk %}"
+                        class="board-fulfill-form"
+                    >
+                        {% csrf_token %}
+
+                        <button type="submit">
+                            Mark as fulfilled <span>✓</span>
+                        </button>
+                    </form>
+                {% endif %}
+
+                <span class="board-card__corner" aria-hidden="true">✳</span>
+            </article>
+
+        {% empty %}
+            <div class="board-empty">
+                <span class="board-empty__mark">?</span>
+
+                <span class="board-section-index">
+                    A LITTLE QUIET AROUND HERE
+                </span>
+
+                <h3>No requests just yet.</h3>
+
+                <p>
+                    Be the first to ask. Someone nearby might have
+                    exactly what you need.
+                </p>
+
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'post_board_request' %}" class="board-primary-button">
+                        Post the first request <span>↗</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="board-primary-button">
+                        Login to post <span>↗</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+    </div>
+
+    <div class="board-footnote">
+        <span>✳</span>
+        A campus works better when we help each other out.
+    </div>
+
+</section>
+{% endblock %}

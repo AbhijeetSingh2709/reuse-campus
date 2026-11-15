@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Login — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="auth-editorial auth-editorial--login">
+
+    <div class="auth-editorial__visual">
+        <span class="auth-visual__eyebrow">
+            GOOD THINGS CIRCULATE / 01
+        </span>
+
+        <div class="auth-visual__art" aria-hidden="true">
+            <span class="auth-art__sun"></span>
+            <span class="auth-art__orbit auth-art__orbit--one"></span>
+            <span class="auth-art__orbit auth-art__orbit--two"></span>
+            <span class="auth-art__book auth-art__book--one"></span>
+            <span class="auth-art__book auth-art__book--two"></span>
+            <span class="auth-art__flower">✳</span>
+            <span class="auth-art__caption">
+                PASS IT ON<br>KEEP IT MOVING
+            </span>
+        </div>
+
+        <div class="auth-visual__quote">
+            <span>THE REUSE WAY</span>
+            <p>Find what you need.<br><em>Give what you can.</em></p>
+        </div>
+    </div>
+
+    <div class="auth-editorial__content">
+        <div class="auth-content__inner">
+
+            <span class="auth-kicker">YOUR CAMPUS, CONNECTED</span>
+
+            <h1>Welcome<br><em>back.</em></h1>
+
+            <p class="auth-intro">
+                Good to have you here. Log in and pick up where you left off.
+            </p>
+
+            <form method="POST" class="auth-form auth-form--editorial">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">
+                        Username
+                    </label>
+
+                    {{ form.username }}
+
+                    {% if form.username.errors %}
+                        <p class="field-error">{{ form.username.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}">
+                        Password
+                    </label>
+
+                    {{ form.password }}
+
+                    {% if form.password.errors %}
+                        <p class="field-error">{{ form.password.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="auth-submit">
+                    Log in to your account <span>↗</span>
+                </button>
+            </form>
+
+            <p class="auth-switch">
+                New to ReUse Campus?
+                <a href="{% url 'register' %}">
+                    Create an account <span>→</span>
+                </a>
+            </p>
+
+            <div class="auth-content__foot">
+                A BETTER CAMPUS IS A SHARED CAMPUS.
+            </div>
+
+        </div>
+    </div>
+
+</section>
+{% endblock %}

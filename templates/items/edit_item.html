@@ -1,0 +1,107 @@
+
+{% extends 'base.html' %}
+{% block title %}Edit Listing — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">YOUR MARKETPLACE</span>
+        <h1>Edit your <em>listing.</em></h1>
+        <p>Make a few changes and keep your listing up to date.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.title.id_for_label }}">Listing title</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.listing_type.id_for_label }}">Listing type</label>
+                {{ form.listing_type }}
+                {{ form.listing_type.errors }}
+            </div>
+
+            <div class="form-field" id="price-field">
+                <label for="{{ form.price.id_for_label }}">Selling price</label>
+                {{ form.price }}
+                {{ form.price.errors }}
+            </div>
+
+            <div class="form-field" id="rent-price-field">
+                <label for="{{ form.rent_per_day.id_for_label }}">Rent per day</label>
+                {{ form.rent_per_day }}
+                {{ form.rent_per_day.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.image.id_for_label }}">Update image</label>
+
+                {% if item.image %}
+                    <div class="current-image">
+                        <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        <span>Current listing image</span>
+                    </div>
+                {% endif %}
+
+                {{ form.image }}
+                {{ form.image.errors }}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="editorial-button">Save changes ↗</button>
+                <a href="{% url 'item_detail' item.pk %}" class="editorial-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const listingType = document.getElementById("id_listing_type");
+    const priceField = document.getElementById("price-field");
+    const rentPriceField = document.getElementById("rent-price-field");
+
+    function updatePriceFields() {
+        if (!listingType) return;
+
+        const isRent = listingType.value === "rent";
+
+        if (priceField) {
+            priceField.style.display = isRent ? "none" : "block";
+        }
+
+        if (rentPriceField) {
+            rentPriceField.style.display = isRent ? "block" : "none";
+        }
+    }
+
+    if (listingType) {
+        listingType.addEventListener("change", updatePriceFields);
+        updatePriceFields();
+    }
+});
+</script>
+{% endblock %}

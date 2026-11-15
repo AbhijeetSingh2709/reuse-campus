@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+
+    <div class="editorial-heading">
+        <span class="eyebrow">YOUR PERSONAL SPACE</span>
+
+        <h1>Make it <em>yours.</em></h1>
+
+        <p>
+            A little introduction helps other students know who they're sharing with.
+        </p>
+    </div>
+
+    <div class="editorial-form-card">
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors" role="alert">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="profile-picture-edit">
+
+                {% if request.user.profile.profile_pic %}
+                    <img
+                        src="{{ request.user.profile.profile_pic.url }}"
+                        alt="Current profile picture"
+                    >
+                {% else %}
+                    <div class="profile-picture-placeholder">
+                        {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+
+                <div>
+                    <strong>Your profile picture</strong>
+                    <p>Choose an image that represents you.</p>
+                </div>
+
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.profile_pic.id_for_label }}">
+                    Profile picture
+                </label>
+
+                {{ form.profile_pic }}
+                {{ form.profile_pic.errors }}
+            </div>
+
+            <div class="form-two-columns">
+
+                <div class="form-field">
+                    <label for="{{ form.first_name.id_for_label }}">
+                        First name
+                    </label>
+
+                    {{ form.first_name }}
+                    {{ form.first_name.errors }}
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.last_name.id_for_label }}">
+                        Last name
+                    </label>
+
+                    {{ form.last_name }}
+                    {{ form.last_name.errors }}
+                </div>
+
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.email.id_for_label }}">
+                    Email address
+                </label>
+
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.phone.id_for_label }}">
+                    Phone number
+                </label>
+
+                {{ form.phone }}
+                {{ form.phone.errors }}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.bio.id_for_label }}">
+                    A little about you
+                </label>
+
+                {{ form.bio }}
+                {{ form.bio.errors }}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="editorial-button">
+                    Save profile ↗
+                </button>
+
+                <a
+                    href="{% url 'profile' request.user.username %}"
+                    class="editorial-cancel"
+                >
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+
+{% extends 'base.html' %}
+{% block title %}Request to Buy — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">MAKE IT YOURS</span>
+        <h1>Interested in <em>this?</em></h1>
+        <p>Send the owner a request. They'll decide whether to approve it.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <div class="form-card-intro">
+            <span class="eyebrow">YOUR SELECTED ITEM</span>
+            <h2>{{ item.title }}</h2>
+            <div class="item-summary">
+                <p class="item-summary-price">{{ item.get_display_price }}</p>
+                <p>Listed by {{ item.owner.get_full_name|default:item.owner.username }}</p>
+            </div>
+        </div>
+
+        <div class="form-notice">
+            Your contact details will only be shared once the seller approves your request.
+        </div>
+
+        <form method="POST" class="editorial-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.message.id_for_label }}">A message to the seller <span>(optional)</span></label>
+                {{ form.message }}
+                {% if form.message.errors %}<p class="field-error">{{ form.message.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'item_detail' item.pk %}" class="editorial-cancel">Go back</a>
+                <button type="submit" class="editorial-button">Send purchase request <span>↗</span></button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

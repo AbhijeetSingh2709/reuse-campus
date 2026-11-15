@@ -1,0 +1,41 @@
+
+{% extends 'base.html' %}
+{% block title %}Delete Listing — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page delete-page">
+    <div class="delete-card">
+        <div class="delete-symbol">!</div>
+
+        <span class="eyebrow">LISTING MANAGEMENT</span>
+        <h1>Remove this <em>listing?</em></h1>
+
+        <p>
+            You're about to delete <strong>{{ item.title }}</strong>.
+            This action cannot be undone.
+        </p>
+
+        <div class="delete-item-preview">
+            {% if item.image %}
+                <img src="{{ item.image.url }}" alt="{{ item.title }}">
+            {% endif %}
+            <div>
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.get_category_display }}</span>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-actions">
+                <button type="submit" class="editorial-button danger-button">
+                    Yes, delete listing
+                </button>
+                <a href="{% url 'item_detail' item.pk %}" class="editorial-cancel">
+                    Keep listing
+                </a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

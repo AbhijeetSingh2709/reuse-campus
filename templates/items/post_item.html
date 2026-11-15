@@ -1,0 +1,100 @@
+
+{% extends 'base.html' %}
+{% block title %}List an Item — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">GIVE YOUR ITEMS A SECOND LIFE</span>
+        <h1>Something to <em>share?</em></h1>
+        <p>List something you no longer need. Another student might be looking for exactly that.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <div class="form-card-intro">
+            <span class="eyebrow">NEW LISTING / 01</span>
+            <h2>Tell us about your item.</h2>
+            <p>A few details are all it takes to get started.</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="editorial-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.title.id_for_label }}">Item name</label>
+                {{ form.title }}
+                {% if form.title.errors %}<p class="field-error">{{ form.title.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}<p class="field-error">{{ form.description.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    <label for="{{ form.category.id_for_label }}">Category</label>
+                    {{ form.category }}
+                    {% if form.category.errors %}<p class="field-error">{{ form.category.errors }}</p>{% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.listing_type.id_for_label }}">Listing type</label>
+                    {{ form.listing_type }}
+                    {% if form.listing_type.errors %}<p class="field-error">{{ form.listing_type.errors }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-field" id="price-field">
+                <label for="{{ form.price.id_for_label }}">Sale price (₹)</label>
+                {{ form.price }}
+                {% if form.price.errors %}<p class="field-error">{{ form.price.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-field" id="rent-price-field">
+                <label for="{{ form.rent_per_day.id_for_label }}">Rent per day (₹)</label>
+                {{ form.rent_per_day }}
+                {% if form.rent_per_day.errors %}<p class="field-error">{{ form.rent_per_day.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.image.id_for_label }}">Item photograph</label>
+                {{ form.image }}
+                <small class="field-hint">A clear photo helps other students recognise your item.</small>
+                {% if form.image.errors %}<p class="field-error">{{ form.image.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'explore' %}" class="editorial-cancel">Cancel</a>
+                <button type="submit" class="editorial-button">Publish listing <span>↗</span></button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const listingType = document.getElementById("id_listing_type");
+    const priceField = document.getElementById("price-field");
+    const rentField = document.getElementById("rent-price-field");
+
+    if (!listingType || !priceField || !rentField) return;
+
+    function togglePriceFields() {
+        const isRent = listingType.value === "rent";
+        priceField.hidden = isRent;
+        rentField.hidden = !isRent;
+    }
+
+    listingType.addEventListener("change", togglePriceFields);
+    togglePriceFields();
+});
+</script>
+{% endblock %}

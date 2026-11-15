@@ -1,0 +1,52 @@
+
+{% extends 'base.html' %}
+{% block title %}Post a Request — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">THE COMMUNITY REQUEST BOARD</span>
+        <h1>Looking for <em>something?</em></h1>
+        <p>Tell other students what you need. Someone on campus might have just the thing.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <div class="form-card-intro">
+            <span class="eyebrow">NEW COMMUNITY REQUEST / 01</span>
+            <h2>What are you searching for?</h2>
+            <p>Be specific. It helps the right person find your request.</p>
+        </div>
+
+        <form method="POST" class="editorial-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="form-field">
+                <label for="{{ form.title.id_for_label }}">What do you need?</label>
+                {{ form.title }}
+                {% if form.title.errors %}<p class="field-error">{{ form.title.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.description.id_for_label }}">Add some details <span>(optional)</span></label>
+                {{ form.description }}
+                {% if form.description.errors %}<p class="field-error">{{ form.description.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+                {% if form.category.errors %}<p class="field-error">{{ form.category.errors }}</p>{% endif %}
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'board' %}" class="editorial-cancel">Cancel</a>
+                <button type="submit" class="editorial-button">Post my request <span>↗</span></button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

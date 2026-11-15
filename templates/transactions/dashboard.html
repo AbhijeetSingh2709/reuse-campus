@@ -1,0 +1,283 @@
+
+{% extends 'base.html' %}
+{% block title %}Dashboard — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page dashboard-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">YOUR REUSE SPACE</span>
+        <h1>Your campus, <em>your dashboard.</em></h1>
+        <p>Keep track of your listings, requests and rentals.</p>
+    </div>
+
+    <div class="dashboard-shortcuts">
+        <a href="{% url 'my_items' %}">
+            <span>01</span>
+            <strong>My listings</strong>
+            <small>Manage your items ↗</small>
+        </a>
+        <a href="{% url 'post_item' %}">
+            <span>02</span>
+            <strong>Post an item</strong>
+            <small>Give something a new life ↗</small>
+        </a>
+        <a href="{% url 'explore' %}">
+            <span>03</span>
+            <strong>Explore</strong>
+            <small>Find what you need ↗</small>
+        </a>
+    </div>
+
+    <!-- MY LISTINGS -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">YOUR ACTIVITY</span>
+                <h2>My listings</h2>
+            </div>
+            <a href="{% url 'my_items' %}" class="text-link">View all ↗</a>
+        </div>
+
+        {% if my_items %}
+            <div class="dashboard-list">
+                {% for item in my_items %}
+                    <a href="{% url 'item_detail' item.pk %}" class="dashboard-list-row">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% else %}
+                            <div class="dashboard-image-placeholder">R</div>
+                        {% endif %}
+                        <div class="dashboard-list-info">
+                            <strong>{{ item.title }}</strong>
+                            <span>{{ item.get_listing_type_display }} · {{ item.get_display_price }}</span>
+                        </div>
+                        <span class="status-label status-{{ item.status }}">
+                            {{ item.get_status_display }}
+                        </span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">You haven't posted anything yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- INCOMING BUY REQUESTS -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">SELLER ACTIVITY</span>
+                <h2>Incoming buy requests</h2>
+            </div>
+        </div>
+
+        {% if incoming_buy_requests %}
+            <div class="request-card-grid">
+                {% for buy_request in incoming_buy_requests %}
+                    <article class="dashboard-request-card">
+                        <span class="request-type">BUY REQUEST</span>
+                        <h3>{{ buy_request.item.title }}</h3>
+                        <p class="request-person">
+                            From {{ buy_request.requester.get_full_name|default:buy_request.requester.username }}
+                        </p>
+
+                        {% if buy_request.message %}
+                            <blockquote>{{ buy_request.message }}</blockquote>
+                        {% endif %}
+
+                        <small>Received {{ buy_request.created_at|date:"d M Y" }}</small>
+
+                        <div class="request-actions">
+                            <form method="POST" action="{% url 'approve_buy_request' buy_request.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="editorial-button small-button">Approve</button>
+                            </form>
+                            <form method="POST" action="{% url 'reject_buy_request' buy_request.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="outline-button small-button">Reject</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">No pending buy requests right now.</p>
+        {% endif %}
+    </div>
+
+    <!-- INCOMING RENT REQUESTS -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">RENTAL ACTIVITY</span>
+                <h2>Incoming rent requests</h2>
+            </div>
+        </div>
+
+        {% if incoming_rent_requests %}
+            <div class="request-card-grid">
+                {% for rent_request in incoming_rent_requests %}
+                    <article class="dashboard-request-card">
+                        <span class="request-type">RENT REQUEST</span>
+                        <h3>{{ rent_request.item.title }}</h3>
+                        <p class="request-person">
+                            From {{ rent_request.requester.get_full_name|default:rent_request.requester.username }}
+                        </p>
+
+                        <div class="request-details">
+                            <span>{{ rent_request.start_date|date:"d M Y" }} — {{ rent_request.end_date|date:"d M Y" }}</span>
+                            <span>{{ rent_request.duration_days }} days</span>
+                            <strong>Total: {{ rent_request.total_cost }}</strong>
+                        </div>
+
+                        {% if rent_request.message %}
+                            <blockquote>{{ rent_request.message }}</blockquote>
+                        {% endif %}
+
+                        <div class="request-actions">
+                            <form method="POST" action="{% url 'approve_rent_request' rent_request.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="editorial-button small-button">Approve</button>
+                            </form>
+                            <form method="POST" action="{% url 'reject_rent_request' rent_request.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="outline-button small-button">Reject</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">No pending rent requests right now.</p>
+        {% endif %}
+    </div>
+
+    <!-- ACTIVE RENTALS OUT -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">CURRENTLY OUT</span>
+                <h2>Active rentals</h2>
+            </div>
+        </div>
+
+        {% if active_rentals_out %}
+            <div class="request-card-grid">
+                {% for rental in active_rentals_out %}
+                    <article class="dashboard-request-card">
+                        <span class="request-type">ACTIVE RENTAL</span>
+                        <h3>{{ rental.item.title }}</h3>
+                        <p>Rented by {{ rental.requester.get_full_name|default:rental.requester.username }}</p>
+
+                        <div class="request-details">
+                            <span>From {{ rental.start_date|date:"d M Y" }}</span>
+                            <span>Until {{ rental.end_date|date:"d M Y" }}</span>
+                        </div>
+
+                        <div class="request-details">
+                            <span>Email: {{ rental.requester.email }}</span>
+                        </div>
+
+                        {% if rental.requester.phone %}
+                            <div class="request-details">
+                                <span>Phone: {{ rental.requester.phone }}</span>
+                            </div>
+                        {% endif %}
+
+                        <form method="POST" action="{% url 'mark_returned' rental.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="editorial-button small-button">
+                                Mark as returned
+                            </button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">You don't have any active rentals out.</p>
+        {% endif %}
+    </div>
+
+    <!-- MY BUY REQUESTS -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">WHAT YOU'VE REQUESTED</span>
+                <h2>My buy requests</h2>
+            </div>
+        </div>
+
+        {% if my_buy_requests %}
+            <div class="dashboard-list">
+                {% for buy_request in my_buy_requests %}
+                    <div class="dashboard-list-row request-history-row">
+                        <div class="dashboard-list-info">
+                            <strong>{{ buy_request.item.title }}</strong>
+                            <span>Requested {{ buy_request.created_at|date:"d M Y" }}</span>
+                        </div>
+
+                        <span class="status-label status-{{ buy_request.status }}">
+                            {{ buy_request.status|title }}
+                        </span>
+
+                        {% if buy_request.status == 'approved' %}
+                            <div class="approved-contact">
+                                <strong>Seller contact</strong>
+                                <span>{{ buy_request.item.owner.email }}</span>
+                                {% if buy_request.item.owner.phone %}
+                                    <span>{{ buy_request.item.owner.phone }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">You haven't made any buy requests.</p>
+        {% endif %}
+    </div>
+
+    <!-- MY RENT REQUESTS -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">YOUR RENTALS</span>
+                <h2>My rent requests</h2>
+            </div>
+        </div>
+
+        {% if my_rent_requests %}
+            <div class="dashboard-list">
+                {% for rent_request in my_rent_requests %}
+                    <div class="dashboard-list-row request-history-row">
+                        <div class="dashboard-list-info">
+                            <strong>{{ rent_request.item.title }}</strong>
+                            <span>
+                                {{ rent_request.start_date|date:"d M Y" }} —
+                                {{ rent_request.end_date|date:"d M Y" }}
+                            </span>
+                            <span>Total: {{ rent_request.total_cost }}</span>
+                        </div>
+
+                        <span class="status-label status-{{ rent_request.status }}">
+                            {{ rent_request.status|title }}
+                        </span>
+
+                        {% if rent_request.status == 'approved' %}
+                            <div class="approved-contact">
+                                <strong>Seller contact</strong>
+                                <span>{{ rent_request.item.owner.email }}</span>
+                                {% if rent_request.item.owner.phone %}
+                                    <span>{{ rent_request.item.owner.phone }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">You haven't made any rent requests.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

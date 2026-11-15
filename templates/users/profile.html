@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.username }} — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page profile-page">
+
+    <div class="profile-hero">
+
+        <div class="profile-avatar">
+            {% if profile_user.profile.profile_pic %}
+                <img
+                    src="{{ profile_user.profile.profile_pic.url }}"
+                    alt="{{ profile_user.username }}"
+                >
+            {% else %}
+                <span>
+                    {{ profile_user.first_name|default:profile_user.username|slice:":1"|upper }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="profile-intro">
+            <span class="eyebrow">A MEMBER OF THE COMMUNITY</span>
+
+            <h1>
+                {{ profile_user.get_full_name|default:profile_user.username }}
+                <em>.</em>
+            </h1>
+
+            <p class="profile-username">
+                @{{ profile_user.username }}
+            </p>
+
+            {% if profile_user.profile.bio %}
+                <p class="profile-bio">
+                    {{ profile_user.profile.bio }}
+                </p>
+            {% else %}
+                <p class="profile-bio">
+                    Making campus life a little more sustainable.
+                </p>
+            {% endif %}
+
+            <small>
+                Member since {{ profile_user.date_joined|date:"F Y" }}
+            </small>
+
+            {% if request.user == profile_user %}
+                <div class="profile-actions">
+                    <a href="{% url 'edit_profile' %}" class="editorial-button">
+                        Edit profile
+                    </a>
+
+                    <a href="{% url 'dashboard' %}" class="editorial-cancel">
+                        Dashboard ↗
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <div class="dashboard-section">
+
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">SHARED WITH THE COMMUNITY</span>
+                <h2>Listings</h2>
+            </div>
+
+            <span class="profile-listing-count">
+                {{ listings|length }} listings
+            </span>
+        </div>
+
+        {% if listings %}
+            <div class="profile-listings-grid">
+
+                {% for item in listings %}
+                    <a href="{% url 'item_detail' item.pk %}" class="profile-listing-card">
+
+                        <div class="profile-listing-image">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                            {% else %}
+                                <div class="image-placeholder">ReUse</div>
+                            {% endif %}
+
+                            <span class="status-label status-{{ item.status }}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </div>
+
+                        <div class="profile-listing-info">
+                            <span>{{ item.get_category_display }}</span>
+                            <h3>{{ item.title }}</h3>
+                            <p>
+                                {{ item.get_listing_type_display }} ·
+                                {{ item.get_display_price }}
+                            </p>
+                        </div>
+
+                    </a>
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+            <div class="editorial-empty">
+                <h2>Nothing listed just yet.</h2>
+                <p>
+                    When this member shares something, it'll show up here.
+                </p>
+            </div>
+        {% endif %}
+
+    </div>
+
+</section>
+{% endblock %}

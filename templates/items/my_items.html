@@ -1,0 +1,66 @@
+
+{% extends 'base.html' %}
+{% block title %}My Listings — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading heading-with-action">
+        <div>
+            <span class="eyebrow">YOUR CONTRIBUTION</span>
+            <h1>My <em>listings.</em></h1>
+            <p>Everything you've put back into circulation.</p>
+        </div>
+        <a href="{% url 'post_item' %}" class="editorial-button">+ New listing</a>
+    </div>
+
+    {% if my_items %}
+        <div class="my-listings-grid">
+            {% for item in my_items %}
+                <article class="listing-row">
+                    <a href="{% url 'item_detail' item.pk %}" class="listing-row-image">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% else %}
+                            <div class="image-placeholder">ReUse</div>
+                        {% endif %}
+                    </a>
+
+                    <div class="listing-row-content">
+                        <div class="listing-meta">
+                            <span>{{ item.get_category_display }}</span>
+                            <span class="status-label status-{{ item.status }}">
+                                {{ item.get_status_display }}
+                            </span>
+                        </div>
+
+                        <h2>
+                            <a href="{% url 'item_detail' item.pk %}">
+                                {{ item.title }}
+                            </a>
+                        </h2>
+
+                        <p>{{ item.get_listing_type_display }} · {{ item.get_display_price }}</p>
+                        <small>Posted {{ item.created_at|date:"d M Y" }}</small>
+                    </div>
+
+                    <div class="listing-row-actions">
+                        {% if item.status == 'available' %}
+                            <a href="{% url 'edit_item' item.pk %}">Edit</a>
+                            <a href="{% url 'delete_item' item.pk %}" class="delete-link">Delete</a>
+                        {% else %}
+                            <span class="unavailable-note">Not editable</span>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="editorial-empty">
+            <span class="empty-mark">＋</span>
+            <h2>Your first listing starts here.</h2>
+            <p>Have something another student could use? Give it a second life.</p>
+            <a href="{% url 'post_item' %}" class="editorial-button">Create a listing ↗</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}Home — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    <div class="home-hero__copy">
+        <span class="home-kicker"><span class="home-kicker__line"></span> THE CAMPUS CIRCULAR</span>
+        <p class="home-hero__edition">A marketplace made for student life <span>·</span> No. 01</p>
+
+        <h1>Good things<br>find <em>new stories.</em></h1>
+        <p class="home-hero__description">
+            Your next semester essential might already be on campus.
+            Discover pre-loved finds, pass things on, and make student life a little lighter.
+        </p>
+
+        <form class="home-search" method="GET" action="{% url 'explore' %}">
+            <span class="home-search__symbol" aria-hidden="true">⌕</span>
+            <input type="text" name="q" placeholder="What are you looking for?" value="{{ query|default:'' }}" aria-label="Search listings">
+            <button type="submit">Find it <span aria-hidden="true">↗</span></button>
+        </form>
+
+        <div class="home-hero__links">
+            <a href="{% url 'explore' %}" class="home-link-primary">Explore the marketplace <span aria-hidden="true">↗</span></a>
+            <a href="{% url 'post_item' %}" class="home-link-secondary">Have something to pass on?</a>
+        </div>
+
+        <div class="home-hero__footnote">
+            <span>BUY LESS NEW</span><span class="home-hero__footnote-dot">✳</span><span>SHARE MORE</span><span class="home-hero__footnote-dot">✳</span><span>LIVE RESOURCEFULLY</span>
+        </div>
+    </div>
+
+    <div class="home-hero__art" aria-label="Illustration of books, a laptop and a plant">
+        <div class="home-art__sun"></div>
+        <span class="home-art__scribble home-art__scribble--one">✳</span>
+        <span class="home-art__scribble home-art__scribble--two">✳</span>
+        <div class="home-art__caption home-art__caption--top">GOOD FINDS<br>LIVE ON</div>
+        <svg class="home-art__still-life" viewBox="0 0 560 500" role="img" aria-labelledby="stillLifeTitle" xmlns="http://www.w3.org/2000/svg">
+            <title id="stillLifeTitle">A still life of reusable student essentials</title>
+            <ellipse cx="285" cy="430" rx="218" ry="25" fill="#30251F" opacity=".10"/>
+            <path d="M94 375h372l-25 46H117z" fill="#C7654A"/>
+            <path d="M117 375h325l-10 16H127z" fill="#E58C70"/>
+            <g transform="translate(112 155) rotate(-8 100 110)">
+                <rect x="0" y="0" width="176" height="226" rx="8" fill="#E8B7A7"/>
+                <rect x="13" y="12" width="150" height="202" rx="3" fill="#FAF4E9"/>
+                <path d="M34 42h103M34 55h82" stroke="#C7654A" stroke-width="4" stroke-linecap="round"/>
+                <path d="M34 89h98M34 101h108M34 113h84M34 125h102" stroke="#D8C8B8" stroke-width="3" stroke-linecap="round"/>
+                <path d="M34 166h72" stroke="#C7654A" stroke-width="5" stroke-linecap="round"/>
+                <path d="M0 0h15v226H0z" fill="#C7654A"/>
+            </g>
+            <g transform="translate(286 222) rotate(5 95 75)">
+                <rect x="0" y="0" width="190" height="135" rx="12" fill="#30251F"/>
+                <rect x="8" y="8" width="174" height="119" rx="6" fill="#DCE5DD"/>
+                <path d="M21 26h65v5H21zM21 40h105v4H21zM21 54h82v4H21z" fill="#8C9B8C"/>
+                <circle cx="145" cy="83" r="22" fill="#F2D47A"/>
+                <path d="M-15 137h220l-18 17H3z" fill="#A94E38"/>
+                <path d="M67 139h65l-7 7H74z" fill="#F2D47A"/>
+            </g>
+            <g transform="translate(370 62)">
+                <path d="M48 137C18 100 9 64 27 32c25 17 35 50 21 82C58 71 83 39 119 31c8 37-15 77-63 99 39-12 70-7 93 18-30 24-72 23-101-4" fill="#788B72"/>
+                <path d="M67 133C66 92 76 57 104 26" fill="none" stroke="#536B50" stroke-width="4" stroke-linecap="round"/>
+                <path d="M37 126h86l-10 87H47z" fill="#F2D47A"/>
+                <path d="M34 126h92v16H34z" fill="#D5A94C"/>
+            </g>
+            <g fill="#30251F" opacity=".8"><circle cx="90" cy="105" r="4"/><circle cx="470" cy="250" r="4"/><circle cx="270" cy="90" r="3"/></g>
+        </svg>
+        <div class="home-art__sticker"><span>PASS IT</span><strong>ON.</strong><i>↗</i></div>
+        <div class="home-art__caption home-art__caption--bottom">PRE-LOVED<br>PRE-READY.</div>
+    </div>
+</section>
+
+<section class="home-manifesto">
+    <p>THE IDEA IS SIMPLE</p>
+    <h2>Useful things shouldn't<br><em>sit unused.</em></h2>
+    <span>Find what you need. Share what you don't. Keep good things in circulation.</span>
+</section>
+
+<section class="home-categories home-section-wrap">
+    <div class="home-section-heading">
+        <div>
+            <span class="home-section-index">01 / THE GOOD STUFF</span>
+            <h2>Find your <em>kind</em> of thing.</h2>
+        </div>
+        <a href="{% url 'explore' %}" class="home-text-link">All categories <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="home-category-grid">
+        {% for value, label in categories %}
+        <a href="{% url 'explore' %}?category={{ value }}" class="home-category-card home-category-card--{{ forloop.counter0|divisibleby:2|yesno:'warm,cool' }}">
+            <span class="home-category-card__index">0{{ forloop.counter }}</span>
+            <span class="home-category-card__mark" aria-hidden="true">
+                {% if value == 'books' %}BK
+                {% elif value == 'electronics' %}EL
+                {% elif value == 'calculators' %}CAL
+                {% elif value == 'lab_equipment' %}LAB
+                {% elif value == 'clothing' %}WEAR
+                {% elif value == 'stationery' %}NOTE
+                {% elif value == 'sports' %}PLAY
+                {% else %}✳{% endif %}
+            </span>
+            <span class="home-category-card__name">{{ label }}</span>
+            <span class="home-category-card__arrow" aria-hidden="true">↗</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="home-listings home-section-wrap">
+    <div class="home-section-heading">
+        <div>
+            <span class="home-section-index">02 / CURRENTLY IN CIRCULATION</span>
+            <h2>Worth a <em>look.</em></h2>
+            <p>Useful finds, listed by people just around the corner.</p>
+        </div>
+        <a href="{% url 'explore' %}" class="home-text-link">Explore everything <span aria-hidden="true">↗</span></a>
+    </div>
+
+    <div class="home-product-grid">
+        {% for item in items %}
+        <a href="{% url 'item_detail' item.pk %}" class="home-product-card">
+            <div class="home-product-card__image">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                {% else %}
+                    <div class="home-product-card__placeholder"><span>RC</span><small>READY FOR<br>A NEW HOME</small></div>
+                {% endif %}
+                <span class="home-product-card__type">{{ item.get_listing_type_display }}</span>
+                <span class="home-product-card__view" aria-hidden="true">↗</span>
+            </div>
+            <div class="home-product-card__meta"><span>{{ item.get_category_display }}</span><span>ON CAMPUS</span></div>
+            <h3>{{ item.title }}</h3>
+            <div class="home-product-card__bottom">
+                <strong>{{ item.get_display_price }}</strong>
+                <span>Listed by {{ item.owner.get_full_name|default:item.owner.username }}</span>
+            </div>
+        </a>
+        {% empty %}
+        <div class="home-empty-state">
+            <span class="home-empty-state__mark">✳</span>
+            <div><span class="home-section-index">A LITTLE SPACE TO BEGIN</span><h3>Be the first good find.</h3><p>There aren't any listings here yet. Put something useful back into circulation.</p></div>
+            <a href="{% url 'post_item' %}" class="home-link-primary">Create a listing <span aria-hidden="true">↗</span></a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="home-recent home-section-wrap">
+    <div class="home-recent__intro">
+        <span class="home-section-index">03 / JUST ARRIVED</span>
+        <h2>Fresh to the<br><em>community.</em></h2>
+        <p>The latest things students have put up for grabs.</p>
+        <a href="{% url 'explore' %}" class="home-text-link">See all listings <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="home-recent__list">
+        {% for item in recent_items %}
+        <a href="{% url 'item_detail' item.pk %}" class="home-recent-row">
+            <span class="home-recent-row__image">
+                {% if item.image %}<img src="{{ item.image.url }}" alt="">{% else %}<span>RC</span>{% endif %}
+            </span>
+            <span class="home-recent-row__details"><small>{{ item.get_category_display }}</small><strong>{{ item.title }}</strong><small>{{ item.get_listing_type_display }}</small></span>
+            <strong class="home-recent-row__price">{{ item.get_display_price }}</strong>
+            <span class="home-recent-row__arrow" aria-hidden="true">↗</span>
+        </a>
+        {% empty %}
+        <div class="home-recent-empty">Nothing new just yet. Check back soon.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="home-how home-section-wrap">
+    <div class="home-how__heading">
+        <span class="home-section-index">04 / NO COMPLICATED STUFF</span>
+        <h2>Good things<br>move <em>simply.</em></h2>
+        <p>A small exchange can make a big difference to someone's semester.</p>
+    </div>
+    <div class="home-how__steps">
+        <article class="home-how-step"><span>01</span><div class="home-how-step__symbol">⌕</div><h3>Find your thing.</h3><p>Browse useful items listed by students around your campus.</p></article>
+        <article class="home-how-step"><span>02</span><div class="home-how-step__symbol">↗</div><h3>Make a request.</h3><p>Send the owner a buy or rental request when something catches your eye.</p></article>
+        <article class="home-how-step"><span>03</span><div class="home-how-step__symbol">↔</div><h3>Pass it on.</h3><p>Once approved, connect and arrange your exchange.</p></article>
+    </div>
+</section>
+
+<section class="home-cta home-section-wrap">
+    <div class="home-cta__topline"><span>THE CAMPUS CIRCULAR</span><span>GOOD THINGS, IN GOOD COMPANY.</span></div>
+    <div class="home-cta__main">
+        <div><span class="home-section-index">05 / YOUR TURN</span><h2>Make room for<br><em>another story.</em></h2></div>
+        <div class="home-cta__action"><p>Got something gathering dust? Someone else might need it next week.</p><a href="{% url 'register' %}" class="home-cta__button">Join the community <span aria-hidden="true">↗</span></a></div>
+    </div>
+    <span class="home-cta__asterisk" aria-hidden="true">✳</span>
+</section>
+{% endblock %}

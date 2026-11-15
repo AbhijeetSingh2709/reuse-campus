@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.title }} — ReUse Campus{% endblock %}
+
+{% block content %}
+<main class="detail-page">
+    <nav class="detail-breadcrumb" aria-label="Breadcrumb">
+        <a href="{% url 'home' %}">Home</a><span>/</span>
+        <a href="{% url 'explore' %}">Explore</a><span>/</span>
+        <span aria-current="page">{{ item.title }}</span>
+    </nav>
+
+    <article class="detail-layout">
+        <div class="detail-gallery">
+            <div class="detail-gallery__topline">
+                <span>THE CAMPUS EDIT</span>
+                <span>NO. {{ item.pk }}</span>
+            </div>
+            <div class="detail-image-frame">
+                {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                {% else %}
+                    <div class="detail-image-placeholder">
+                        <span class="detail-image-placeholder__mark">R.</span>
+                        <span>Every useful thing has a story.</span>
+                    </div>
+                {% endif %}
+                <span class="detail-image-caption">PRE-LOVED, READY FOR MORE</span>
+            </div>
+            <div class="detail-gallery__note">
+                <span class="detail-gallery__note-mark">✳</span>
+                <p>A smarter find, shared by someone on your campus.</p>
+            </div>
+        </div>
+
+        <div class="detail-information">
+            <div class="detail-labels">
+                <span class="detail-type detail-type--{{ item.listing_type }}">{{ item.get_listing_type_display }}</span>
+                <span class="detail-status detail-status--{{ item.status }}"><i></i>{{ item.get_status_display }}</span>
+            </div>
+
+            <p class="detail-kicker">{{ item.get_category_display }} <span>·</span> CAMPUS LISTING</p>
+            <h1>{{ item.title }}</h1>
+            <p class="detail-price">{{ item.get_display_price }}</p>
+            <div class="detail-rule"></div>
+
+            <section class="detail-description">
+                <span class="detail-section-index">01 / THE DETAILS</span>
+                <h2>A little more about it.</h2>
+                <p>{{ item.description|linebreaksbr }}</p>
+            </section>
+
+            <section class="detail-seller">
+                <span class="detail-section-index">02 / THE SELLER</span>
+                <div class="detail-seller__row">
+                    <div class="detail-seller__avatar">{{ item.owner.get_full_name|default:item.owner.username|first|upper }}</div>
+                    <div class="detail-seller__identity">
+                        <span>LISTED BY</span>
+                        <a href="{% url 'profile' item.owner.username %}">{{ item.owner.get_full_name|default:item.owner.username }}</a>
+                        <small>Member of the ReUse Campus community</small>
+                    </div>
+                    <span class="detail-seller__arrow">↗</span>
+                </div>
+
+                {% if show_contact %}
+                <div class="detail-contact detail-contact--visible">
+                    <strong>Your request was approved.</strong>
+                    <p>You're all set to contact the seller and arrange your exchange.</p>
+                    {% if item.owner.email %}<a href="mailto:{{ item.owner.email }}">Email · {{ item.owner.email }}</a>{% endif %}
+                    {% if item.owner.phone %}<a href="tel:{{ item.owner.phone }}">Phone · {{ item.owner.phone }}</a>{% endif %}
+                </div>
+                {% else %}
+                <div class="detail-contact detail-contact--hidden">
+                    <span class="detail-contact__lock">↗</span>
+                    <p>Seller contact details become available once your request is approved.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="detail-action-area">
+                <span class="detail-section-index">03 / WHAT'S NEXT?</span>
+                <div class="detail-actions">
+                    {% if request.user == item.owner %}
+                        {% if item.status == 'available' %}
+                            <a href="{% url 'edit_item' item.pk %}" class="detail-button detail-button--primary">Edit this listing <span>↗</span></a>
+                            <form method="POST" action="{% url 'delete_item' item.pk %}" class="detail-delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="detail-button detail-button--quiet" onclick="return confirm('Delete this listing?')">Delete listing</button>
+                            </form>
+                        {% endif %}
+                    {% elif item.status == 'available' %}
+                        {% if request.user.is_authenticated %}
+                            {% if has_pending_request %}
+                                <div class="detail-request-message"><span>↗</span><p><strong>Request sent</strong>Your request is pending. The seller will respond soon.</p></div>
+                            {% elif has_approved_request %}
+                                <div class="detail-request-message detail-request-message--approved"><span>✓</span><p><strong>You're approved</strong>Contact details are available above.</p></div>
+                            {% else %}
+                                {% if item.listing_type == 'sell' %}
+                                    <a href="{% url 'request_to_buy' item.pk %}" class="detail-button detail-button--primary">Request to buy <span>↗</span></a>
+                                {% elif item.listing_type == 'rent' %}
+                                    <a href="{% url 'request_to_rent' item.pk %}" class="detail-button detail-button--primary">Request to rent <span>↗</span></a>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'login' %}?next={% url 'item_detail' item.pk %}" class="detail-button detail-button--primary">Log in to request <span>↗</span></a>
+                        {% endif %}
+                    {% elif item.status == 'rented' %}
+                        <div class="detail-unavailable"><strong>Currently rented</strong><span>This item isn't available right now.</span></div>
+                    {% elif item.status == 'sold' %}
+                        <div class="detail-unavailable"><strong>Already found a new home</strong><span>This item has been sold.</span></div>
+                    {% endif %}
+                </div>
+                <p class="detail-action-footnote">A request is the first step. Exchange arrangements happen directly between students.</p>
+            </section>
+        </div>
+    </article>
+
+    {% if related_items %}
+    <section class="detail-related">
+        <div class="detail-related__heading">
+            <div><span class="detail-section-index">KEEP LOOKING</span><h2>More good finds.</h2></div>
+            <a href="{% url 'explore' %}?category={{ item.category }}">Explore this category <span>↗</span></a>
+        </div>
+        <div class="detail-related__grid">
+            {% for related in related_items %}
+            <a href="{% url 'item_detail' related.pk %}" class="detail-related-card">
+                <div class="detail-related-card__image">
+                    {% if related.image %}
+                        <img src="{{ related.image.url }}" alt="{{ related.title }}">
+                    {% else %}
+                        <span>R.</span>
+                    {% endif %}
+                    <span class="detail-related-card__type">{{ related.get_listing_type_display }}</span>
+                </div>
+                <div class="detail-related-card__meta"><span>{{ related.get_category_display }}</span><span>↗</span></div>
+                <h3>{{ related.title }}</h3>
+                <p>{{ related.get_display_price }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</main>
+{% endblock %}

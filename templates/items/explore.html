@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Explore — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="marketplace-page">
+    <div class="marketplace-intro">
+        <div class="marketplace-intro__copy">
+            <span class="eyebrow"><span class="eyebrow__dot"></span> THE CAMPUS MARKETPLACE</span>
+            <h1>Find something <em>useful.</em></h1>
+            <p>Good finds, fair prices and useful things looking for their next home.</p>
+        </div>
+        <div class="marketplace-intro__aside" aria-hidden="true">
+            <span class="marketplace-stamp">PRE-LOVED<br>PRE-LOVED<br>PRE-LOVED</span>
+            <span class="marketplace-intro__asterisk">✳</span>
+        </div>
+    </div>
+
+    <div class="marketplace-layout">
+        <aside class="marketplace-sidebar">
+            <div class="filter-panel__heading">
+                <span class="eyebrow">REFINE YOUR SEARCH</span>
+                <a href="{% url 'explore' %}" class="filter-clear">Clear all ↗</a>
+            </div>
+
+            <form method="GET" action="{% url 'explore' %}" class="marketplace-filters">
+                <div class="filter-field filter-field--search">
+                    <label for="market-search">Search listings</label>
+                    <div class="filter-search-wrap">
+                        <span aria-hidden="true">⌕</span>
+                        <input id="market-search" type="text" name="q" placeholder="Books, calculators..." value="{{ query|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="filter-field">
+                    <label for="market-category">Category</label>
+                    <select id="market-category" name="category">
+                        <option value="">All categories</option>
+                        {% for value, label in categories %}
+                        <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <fieldset class="filter-field filter-type-field">
+                    <legend>I'm looking to</legend>
+                    <label class="filter-choice">
+                        <input type="radio" name="type" value="" {% if not selected_type %}checked{% endif %}>
+                        <span>Buy or rent</span>
+                    </label>
+                    <label class="filter-choice">
+                        <input type="radio" name="type" value="sell" {% if selected_type == 'sell' %}checked{% endif %}>
+                        <span>Buy</span>
+                    </label>
+                    <label class="filter-choice">
+                        <input type="radio" name="type" value="rent" {% if selected_type == 'rent' %}checked{% endif %}>
+                        <span>Rent</span>
+                    </label>
+                </fieldset>
+
+                <div class="filter-field">
+                    <label for="market-sort">Sort by</label>
+                    <select id="market-sort" name="sort">
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+                        <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option>
+                        <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn--primary marketplace-apply">Apply filters <span>→</span></button>
+                <a href="{% url 'explore' %}" class="marketplace-reset">Reset your search</a>
+            </form>
+
+            <div class="marketplace-sidebar-note">
+                <span>✳</span>
+                <p>One person's unused item could be exactly what another student needs.</p>
+            </div>
+        </aside>
+
+        <div class="marketplace-results">
+            <div class="marketplace-results__top">
+                <div>
+                    <span class="eyebrow">A LITTLE SOMETHING FOR EVERYONE</span>
+                    <h2>All listings<span class="marketplace-count">{{ items|length }}</span></h2>
+                    <p>{{ items|length }} listing{{ items|length|pluralize }} found{% if query %} for “{{ query }}”{% endif %}</p>
+                </div>
+                <a href="{% url 'post_item' %}" class="marketplace-sell-link">Have something to share? <strong>List an item ↗</strong></a>
+            </div>
+
+            <div class="items-grid marketplace-grid">
+                {% for item in items %}
+                <a href="{% url 'item_detail' item.pk %}" class="item-card marketplace-card">
+                    <div class="item-card__image marketplace-card__image">
+                        {% if item.image %}
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% else %}
+                            <div class="item-card__no-image"><span>✳</span><small>Waiting for a new home</small></div>
+                        {% endif %}
+                        <span class="badge badge--{{ item.listing_type }}">{{ item.get_listing_type_display }}</span>
+                    </div>
+                    <div class="item-card__body">
+                        <span class="item-card__category">{{ item.get_category_display }}</span>
+                        <h3>{{ item.title }}</h3>
+                        <p class="item-card__price">{{ item.get_display_price }}</p>
+                        <div class="item-card__seller">Listed by {{ item.owner.get_full_name|default:item.owner.username }}</div>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="marketplace-empty">
+                    <span class="marketplace-empty__symbol">⌕</span>
+                    <span class="eyebrow">NOTHING HERE JUST YET</span>
+                    <h3>No listings found.</h3>
+                    <p>Try changing your search or clearing a filter. Your next great find might be one search away.</p>
+                    <a href="{% url 'explore' %}" class="btn btn--outline">Clear all filters</a>
+                    {% if request.user.is_authenticated %}
+                    <a href="{% url 'post_item' %}" class="marketplace-empty__post">Or be the first to list something ↗</a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
