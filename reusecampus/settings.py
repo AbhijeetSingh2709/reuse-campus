@@ -1,14 +1,38 @@
+
 import os
 from pathlib import Path
+
+import dj_database_url
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-me')
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = ['*']
+DEBUG = os.getenv("DEBUG", "True") == "True"
+
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-local-development-only"
+)
+
+if not DEBUG and SECRET_KEY == "django-insecure-local-development-only":
+    raise RuntimeError("SECRET_KEY must be set in production")
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        "127.0.0.1,localhost"
+    ).split(",")
+    if host.strip()
+]
+
+render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+
+if render_host:
+    ALLOWED_HOSTS.append(render_host)
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,12 +79,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'reusecampus.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+
+
+
+if os.getenv("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.parse(
+            os.getenv("DATABASE_URL"),
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
+
+
 
 AUTH_USER_MODEL = 'users.User'
 
