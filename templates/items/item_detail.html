@@ -16,8 +16,8 @@
                 <span>NO. {{ item.pk }}</span>
             </div>
             <div class="detail-image-frame">
-                {% if item.image %}
-                    <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}">
                 {% else %}
                     <div class="detail-image-placeholder">
                         <span class="detail-image-placeholder__mark">R.</span>
@@ -68,10 +68,16 @@
                     {% if item.owner.email %}<a href="mailto:{{ item.owner.email }}">Email · {{ item.owner.email }}</a>{% endif %}
                     {% if item.owner.phone %}<a href="tel:{{ item.owner.phone }}">Phone · {{ item.owner.phone }}</a>{% endif %}
                 </div>
-                {% else %}
+                {% elif request.user != item.owner %}
                 <div class="detail-contact detail-contact--hidden">
                     <span class="detail-contact__lock">↗</span>
                     <p>Seller contact details become available once your request is approved.</p>
+                </div>
+                {% endif %}
+
+                {% if request.user != item.owner %}
+                <div class="detail-message-action">
+                    <a href="{% url 'start_conversation_item' item.owner.username item.pk %}" class="detail-button detail-button--secondary">Message seller</a>
                 </div>
                 {% endif %}
             </section>
@@ -124,8 +130,8 @@
             {% for related in related_items %}
             <a href="{% url 'item_detail' related.pk %}" class="detail-related-card">
                 <div class="detail-related-card__image">
-                    {% if related.image %}
-                        <img src="{{ related.image.url }}" alt="{{ related.title }}">
+                    {% if related.image_url %}
+                        <img src="{{ related.image_url }}" alt="{{ related.title }}">
                     {% else %}
                         <span>R.</span>
                     {% endif %}

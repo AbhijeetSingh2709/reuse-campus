@@ -18,8 +18,8 @@
             {% for item in my_items %}
                 <article class="listing-row">
                     <a href="{% url 'item_detail' item.pk %}" class="listing-row-image">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="{{ item.title }}">
                         {% else %}
                             <div class="image-placeholder">ReUse</div>
                         {% endif %}

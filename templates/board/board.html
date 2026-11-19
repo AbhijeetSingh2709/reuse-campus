@@ -92,7 +92,7 @@
     <div class="board-grid">
 
         {% for br in board_requests %}
-            <article class="board-card {% if br.is_fulfilled %}board-card--fulfilled{% endif %}">
+            <article id="board-request-{{ br.pk }}" class="board-card {% if br.is_fulfilled %}board-card--fulfilled{% endif %}">
 
                 <div class="board-card__topline">
                     <span class="board-card__category">
@@ -147,6 +147,18 @@
                             Mark as fulfilled <span>✓</span>
                         </button>
                     </form>
+                {% endif %}
+
+                {% if not br.is_fulfilled and request.user != br.posted_by %}
+                    {% if request.user.is_authenticated %}
+                        <a href="{% url 'start_board_conversation' br.pk %}" class="board-primary-button">
+                            I Have This <span>↗</span>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}?next={% url 'start_board_conversation' br.pk %}" class="board-primary-button">
+                            Login to respond <span>↗</span>
+                        </a>
+                    {% endif %}
                 {% endif %}
 
                 <span class="board-card__corner" aria-hidden="true">✳</span>

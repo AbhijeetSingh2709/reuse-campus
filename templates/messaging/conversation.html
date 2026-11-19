@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {% if other_user %}{{ other_user.get_full_name|default:other_user.username }}{% else %}a former member{% endif %} — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page chat-page">
+
+    <div class="chat-header">
+        <a href="{% url 'inbox' %}" class="back-link">← Back to Messages</a>
+        <div class="chat-header-info">
+            <div class="conversation-avatar">
+                {% if other_user and other_user.profile_pic %}
+                    <img src="{{ other_user.profile_pic.url }}" alt="{{ other_user.username }}">
+                {% else %}
+                    <span>{{ other_user.first_name|first|upper|default:"?" }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <strong>{% if other_user %}{{ other_user.get_full_name|default:other_user.username }}{% else %}Former member{% endif %}</strong>
+                {% if other_user.email %}
+                    <a href="mailto:{{ other_user.email }}">{{ other_user.email }}</a>
+                {% endif %}
+                {% if conversation.item %}
+                    <a href="{% url 'item_detail' conversation.item.pk %}" class="chat-item-link">
+                        Re: {{ conversation.item.title }}
+                    </a>
+                {% elif conversation.board_request %}
+                    <a href="{% url 'board' %}#board-request-{{ conversation.board_request.pk }}" class="chat-item-link">
+                        Request: {{ conversation.board_request.title }}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        {% if all_messages %}
+            {% for msg in all_messages %}
+                <div class="chat-bubble {% if msg.sender == request.user %}chat-bubble--mine{% else %}chat-bubble--theirs{% endif %}">
+                    <span class="chat-sender">{% if msg.sender == request.user %}You{% else %}{{ msg.sender.get_full_name|default:msg.sender.username }}{% endif %}</span>
+                    <p>{{ msg.body|linebreaksbr }}</p>
+                    <span class="chat-time">{{ msg.created_at|date:"d M Y, H:i" }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="chat-empty">
+                <p>Start the conversation! Send a message below.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <form method="POST" class="chat-form">
+        {% csrf_token %}
+        {{ form.body.errors }}
+        <div class="chat-input-row">
+            {{ form.body }}
+            <button type="submit" class="editorial-button">Send</button>
+        </div>
+    </form>
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-scroll to the bottom of the chat
+    const chatContainer = document.getElementById('chatMessages');
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+</script>
+{% endblock %}

@@ -1,9 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.files.storage import default_storage
 from django.db.models import Q
 from .models import Item, CATEGORY_CHOICES
 from .forms import ItemForm
+
+
+def _delete_stored_file(name):
+    """Remove a media file after the database no longer points at it."""
+    if name:
+        default_storage.delete(name)
 
 
 def home_view(request):
@@ -147,9 +154,18 @@ def edit_item_view(request, pk):
         return redirect('item_detail', pk=pk)
 
     if request.method == 'POST':
+        previous_image = item.image.name if item.image else ''
         form = ItemForm(request.POST, request.FILES, instance=item)
         if form.is_valid():
-            form.save()
+            new_upload = 'image' in request.FILES
+            remove_image = form.cleaned_data.get('remove_image') and not new_upload
+            updated = form.save(commit=False)
+            if remove_image:
+                updated.image = None
+            updated.save()
+            current_image = updated.image.name if updated.image else ''
+            if previous_image and previous_image != current_image:
+                _delete_stored_file(previous_image)
             messages.success(request, 'Listing updated.')
             return redirect('item_detail', pk=pk)
     else:
@@ -164,7 +180,9 @@ def delete_item_view(request, pk):
         messages.error(request, 'You can only delete your own listings.')
         return redirect('item_detail', pk=pk)
     if request.method == 'POST':
+        previous_image = item.image.name if item.image else ''
         item.delete()
+        _delete_stored_file(previous_image)
         messages.success(request, 'Listing deleted.')
         return redirect('my_items')
     return render(request, 'items/delete_item.html', {'item': item})

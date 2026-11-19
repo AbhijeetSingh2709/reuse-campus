@@ -1,9 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
+from django.urls import reverse
+from django.views.decorators.http import require_POST
 from items.models import Item
 from .models import BuyRequest, RentRequest
 from .forms import BuyRequestForm, RentRequestForm
+from messaging.services import create_notification
+
+
+def _notify_request_status(item_request, actor, status):
+    approved = status == 'approved'
+    request_anchor = (
+        'my-buy-request'
+        if item_request._meta.model_name == 'buyrequest'
+        else 'my-rent-request'
+    )
+    create_notification(
+        recipient=item_request.requester,
+        actor=actor,
+        notification_type='item_approved' if approved else 'item_rejected',
+        message=(
+            f'Your request for "{item_request.item.title}" was '
+            f'{"approved" if approved else "rejected"}.'
+        ),
+        target=item_request,
+        target_url=f"{reverse('dashboard')}#{request_anchor}-{item_request.pk}",
+        dedupe_key=f'{item_request._meta.model_name}:{item_request.pk}:{status}',
+    )
 
 
 @login_required
@@ -24,7 +49,17 @@ def request_to_buy(request, pk):
             req = form.save(commit=False)
             req.item = item
             req.requester = request.user
-            req.save()
+            with transaction.atomic():
+                req.save()
+                create_notification(
+                    recipient=item.owner,
+                    actor=request.user,
+                    notification_type='item_requested',
+                    message=f'{request.user.get_full_name() or request.user.username} requested to buy "{item.title}".',
+                    target=req,
+                    target_url=f"{reverse('dashboard')}#buy-request-{req.pk}",
+                    dedupe_key=f'buy-request:{req.pk}:submitted',
+                )
             messages.success(request, 'Request sent! You will be notified when the seller responds.')
             return redirect('item_detail', pk=pk)
     else:
@@ -51,7 +86,17 @@ def request_to_rent(request, pk):
             req = form.save(commit=False)
             req.item = item
             req.requester = request.user
-            req.save()
+            with transaction.atomic():
+                req.save()
+                create_notification(
+                    recipient=item.owner,
+                    actor=request.user,
+                    notification_type='item_requested',
+                    message=f'{request.user.get_full_name() or request.user.username} requested to rent "{item.title}".',
+                    target=req,
+                    target_url=f"{reverse('dashboard')}#rent-request-{req.pk}",
+                    dedupe_key=f'rent-request:{req.pk}:submitted',
+                )
             messages.success(request, 'Rent request sent! The owner will review it shortly.')
             return redirect('item_detail', pk=pk)
     else:
@@ -61,59 +106,94 @@ def request_to_rent(request, pk):
 
 
 @login_required
+@require_POST
 def approve_buy_request(request, req_id):
-    buy_req = get_object_or_404(BuyRequest, pk=req_id)
-    if buy_req.item.owner != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    with transaction.atomic():
+        buy_req = get_object_or_404(
+            BuyRequest.objects.select_for_update().select_related('item', 'requester'),
+            pk=req_id,
+        )
+        if buy_req.item.owner != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+        if buy_req.status != 'pending':
+            messages.info(request, 'This request has already been handled.')
+            return redirect('dashboard')
 
-    buy_req.status = 'approved'
-    buy_req.save()
+        other_requests = list(
+            BuyRequest.objects.select_for_update().filter(
+                item=buy_req.item,
+                status='pending',
+            ).exclude(pk=req_id).select_related('requester')
+        )
+        buy_req.status = 'approved'
+        buy_req.save(update_fields=['status'])
+        buy_req.item.status = 'sold'
+        buy_req.item.save(update_fields=['status'])
+        _notify_request_status(buy_req, request.user, 'approved')
 
-    # Mark item as sold
-    buy_req.item.status = 'sold'
-    buy_req.item.save()
-
-    # Auto-reject all other pending requests for this item
-    BuyRequest.objects.filter(
-        item=buy_req.item, status='pending'
-    ).exclude(pk=req_id).update(status='rejected')
+        for other_request in other_requests:
+            other_request.status = 'rejected'
+            other_request.save(update_fields=['status'])
+            _notify_request_status(other_request, request.user, 'rejected')
 
     messages.success(request, f'Request by {buy_req.requester.username} approved. Item marked as sold.')
     return redirect('dashboard')
 
 
 @login_required
+@require_POST
 def reject_buy_request(request, req_id):
-    buy_req = get_object_or_404(BuyRequest, pk=req_id)
-    if buy_req.item.owner != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    with transaction.atomic():
+        buy_req = get_object_or_404(
+            BuyRequest.objects.select_for_update().select_related('item', 'requester'),
+            pk=req_id,
+        )
+        if buy_req.item.owner != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+        if buy_req.status != 'pending':
+            messages.info(request, 'This request has already been handled.')
+            return redirect('dashboard')
+        buy_req.status = 'rejected'
+        buy_req.save(update_fields=['status'])
+        _notify_request_status(buy_req, request.user, 'rejected')
 
-    buy_req.status = 'rejected'
-    buy_req.save()
     messages.info(request, f'Request by {buy_req.requester.username} rejected.')
     return redirect('dashboard')
 
 
 @login_required
+@require_POST
 def approve_rent_request(request, req_id):
-    rent_req = get_object_or_404(RentRequest, pk=req_id)
-    if rent_req.item.owner != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    with transaction.atomic():
+        rent_req = get_object_or_404(
+            RentRequest.objects.select_for_update().select_related('item', 'requester'),
+            pk=req_id,
+        )
+        if rent_req.item.owner != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+        if rent_req.status != 'pending':
+            messages.info(request, 'This request has already been handled.')
+            return redirect('dashboard')
 
-    rent_req.status = 'approved'
-    rent_req.save()
+        other_requests = list(
+            RentRequest.objects.select_for_update().filter(
+                item=rent_req.item,
+                status='pending',
+            ).exclude(pk=req_id).select_related('requester')
+        )
+        rent_req.status = 'approved'
+        rent_req.save(update_fields=['status'])
+        rent_req.item.status = 'rented'
+        rent_req.item.save(update_fields=['status'])
+        _notify_request_status(rent_req, request.user, 'approved')
 
-    # Mark item as rented
-    rent_req.item.status = 'rented'
-    rent_req.item.save()
-
-    # Auto-reject all other pending rent requests for this item
-    RentRequest.objects.filter(
-        item=rent_req.item, status='pending'
-    ).exclude(pk=req_id).update(status='rejected')
+        for other_request in other_requests:
+            other_request.status = 'rejected'
+            other_request.save(update_fields=['status'])
+            _notify_request_status(other_request, request.user, 'rejected')
 
     messages.success(
         request,
@@ -123,31 +203,53 @@ def approve_rent_request(request, req_id):
 
 
 @login_required
+@require_POST
 def reject_rent_request(request, req_id):
-    rent_req = get_object_or_404(RentRequest, pk=req_id)
-    if rent_req.item.owner != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    with transaction.atomic():
+        rent_req = get_object_or_404(
+            RentRequest.objects.select_for_update().select_related('item', 'requester'),
+            pk=req_id,
+        )
+        if rent_req.item.owner != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
+        if rent_req.status != 'pending':
+            messages.info(request, 'This request has already been handled.')
+            return redirect('dashboard')
+        rent_req.status = 'rejected'
+        rent_req.save(update_fields=['status'])
+        _notify_request_status(rent_req, request.user, 'rejected')
 
-    rent_req.status = 'rejected'
-    rent_req.save()
     messages.info(request, f'Rent request by {rent_req.requester.username} rejected.')
     return redirect('dashboard')
 
 
 @login_required
+@require_POST
 def mark_returned(request, req_id):
-    rent_req = get_object_or_404(RentRequest, pk=req_id, status='approved')
-    if rent_req.item.owner != request.user:
-        messages.error(request, 'Permission denied.')
-        return redirect('dashboard')
+    with transaction.atomic():
+        rent_req = get_object_or_404(
+            RentRequest.objects.select_for_update().select_related('item', 'requester'),
+            pk=req_id,
+            status='approved',
+        )
+        if rent_req.item.owner != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('dashboard')
 
-    rent_req.status = 'returned'
-    rent_req.save()
-
-    # Make item available for rent again
-    rent_req.item.status = 'available'
-    rent_req.item.save()
+        rent_req.status = 'returned'
+        rent_req.save(update_fields=['status'])
+        rent_req.item.status = 'available'
+        rent_req.item.save(update_fields=['status'])
+        create_notification(
+            recipient=rent_req.requester,
+            actor=request.user,
+            notification_type='transaction_status',
+            message=f'"{rent_req.item.title}" has been marked as returned.',
+            target=rent_req,
+            target_url=f"{reverse('dashboard')}#my-rent-request-{rent_req.pk}",
+            dedupe_key=f'rent-request:{rent_req.pk}:returned',
+        )
 
     messages.success(request, 'Item marked as returned and is now available for rent again!')
     return redirect('dashboard')

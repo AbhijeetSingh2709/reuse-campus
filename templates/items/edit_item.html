@@ -45,27 +45,47 @@
             <div class="form-field" id="price-field">
                 <label for="{{ form.price.id_for_label }}">Selling price</label>
                 {{ form.price }}
+                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
                 {{ form.price.errors }}
             </div>
 
             <div class="form-field" id="rent-price-field">
                 <label for="{{ form.rent_per_day.id_for_label }}">Rent per day</label>
                 {{ form.rent_per_day }}
+                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
                 {{ form.rent_per_day.errors }}
             </div>
 
-            <div class="form-field">
-                <label for="{{ form.image.id_for_label }}">Update image</label>
+            <div class="form-field photo-field">
+                <label for="{{ form.image.id_for_label }}">Listing photo</label>
 
                 {% if item.image %}
-                    <div class="current-image">
-                        <img src="{{ item.image.url }}" alt="{{ item.title }}">
-                        <span>Current listing image</span>
+                    <div class="photo-manager__current" id="current-photo">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="Current photo of {{ item.title }}">
+                        {% else %}
+                            <div class="photo-manager__missing">Photo file missing</div>
+                        {% endif %}
+                        <div>
+                            <strong>Current photo</strong>
+                            <p>Choose a new photo to replace it, or remove it and keep the listing.</p>
+                            <label class="photo-remove" for="{{ form.remove_image.id_for_label }}">
+                                {{ form.remove_image }}
+                                <span>Remove current photo</span>
+                            </label>
+                            {{ form.remove_image.errors }}
+                        </div>
                     </div>
                 {% endif %}
 
                 {{ form.image }}
+                <small class="field-hint">JPG, PNG, WEBP, or GIF, up to 5 MB. Leave this empty to keep the current photo.</small>
                 {{ form.image.errors }}
+
+                <div class="photo-manager__preview" id="photo-preview" hidden>
+                    <img id="photo-preview-img" alt="Preview of the newly selected photo">
+                    <span>New photo preview — saved when you click Save changes</span>
+                </div>
             </div>
 
             <div class="form-actions">

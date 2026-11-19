@@ -16,8 +16,8 @@
         </p>
 
         <div class="delete-item-preview">
-            {% if item.image %}
-                <img src="{{ item.image.url }}" alt="{{ item.title }}">
+            {% if item.image_url %}
+                <img src="{{ item.image_url }}" alt="{{ item.title }}">
             {% endif %}
             <div>
                 <strong>{{ item.title }}</strong>

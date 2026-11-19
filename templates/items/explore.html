@@ -90,8 +90,8 @@
                 {% for item in items %}
                 <a href="{% url 'item_detail' item.pk %}" class="item-card marketplace-card">
                     <div class="item-card__image marketplace-card__image">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="{{ item.title }}">
                         {% else %}
                             <div class="item-card__no-image"><span>✳</span><small>Waiting for a new home</small></div>
                         {% endif %}

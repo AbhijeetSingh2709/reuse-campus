@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">YOUR UPDATES</span>
+        <h1>Notifications</h1>
+        <p>Requests, replies and messages from your campus community.</p>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="dashboard-section-heading">
+            <div>
+                <span class="eyebrow">RECENT ACTIVITY</span>
+                <h2>Your notifications</h2>
+            </div>
+            {% if unread_notification_count %}
+                <form method="POST" action="{% url 'mark_all_notifications_read' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="outline-button small-button">Mark all as read</button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if notifications %}
+            <div class="dashboard-list">
+                {% for notification in notifications %}
+                    <div class="dashboard-list-row">
+                        <div class="dashboard-list-info">
+                            <a href="{% url 'open_notification' notification.pk %}">
+                                <strong>{{ notification.message }}</strong>
+                            </a>
+                            <span>{{ notification.created_at|date:"d M Y, H:i" }}</span>
+                        </div>
+                        {% if not notification.is_read %}
+                            <form method="POST" action="{% url 'mark_notification_read' notification.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="outline-button small-button">Mark as read</button>
+                            </form>
+                        {% else %}
+                            <span class="status-label">Read</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="dashboard-empty">You don't have any notifications yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

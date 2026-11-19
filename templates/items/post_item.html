@@ -53,20 +53,26 @@
             <div class="form-field" id="price-field">
                 <label for="{{ form.price.id_for_label }}">Sale price (₹)</label>
                 {{ form.price }}
+                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
                 {% if form.price.errors %}<p class="field-error">{{ form.price.errors }}</p>{% endif %}
             </div>
 
             <div class="form-field" id="rent-price-field">
                 <label for="{{ form.rent_per_day.id_for_label }}">Rent per day (₹)</label>
                 {{ form.rent_per_day }}
+                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
                 {% if form.rent_per_day.errors %}<p class="field-error">{{ form.rent_per_day.errors }}</p>{% endif %}
             </div>
 
-            <div class="form-field">
+            <div class="form-field photo-field">
                 <label for="{{ form.image.id_for_label }}">Item photograph</label>
                 {{ form.image }}
-                <small class="field-hint">A clear photo helps other students recognise your item.</small>
+                <small class="field-hint">A clear photo helps other students recognise your item. JPG, PNG, WEBP, or GIF, up to 5 MB.</small>
                 {% if form.image.errors %}<p class="field-error">{{ form.image.errors }}</p>{% endif %}
+                <div class="photo-manager__preview" id="photo-preview" hidden>
+                    <img id="photo-preview-img" alt="Preview of the selected photo">
+                    <span>Photo preview — saved when you publish</span>
+                </div>
             </div>
 
             <div class="form-actions">

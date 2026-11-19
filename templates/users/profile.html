@@ -80,8 +80,8 @@
                     <a href="{% url 'item_detail' item.pk %}" class="profile-listing-card">
 
                         <div class="profile-listing-image">
-                            {% if item.image %}
-                                <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}">
                             {% else %}
                                 <div class="image-placeholder">ReUse</div>
                             {% endif %}

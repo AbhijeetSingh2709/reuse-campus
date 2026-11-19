@@ -118,8 +118,8 @@
         {% for item in items %}
         <a href="{% url 'item_detail' item.pk %}" class="home-product-card">
             <div class="home-product-card__image">
-                {% if item.image %}
-                    <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                {% if item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}">
                 {% else %}
                     <div class="home-product-card__placeholder"><span>RC</span><small>READY FOR<br>A NEW HOME</small></div>
                 {% endif %}
@@ -154,7 +154,7 @@
         {% for item in recent_items %}
         <a href="{% url 'item_detail' item.pk %}" class="home-recent-row">
             <span class="home-recent-row__image">
-                {% if item.image %}<img src="{{ item.image.url }}" alt="">{% else %}<span>RC</span>{% endif %}
+                {% if item.image_url %}<img src="{{ item.image_url }}" alt="">{% else %}<span>RC</span>{% endif %}
             </span>
             <span class="home-recent-row__details"><small>{{ item.get_category_display }}</small><strong>{{ item.title }}</strong><small>{{ item.get_listing_type_display }}</small></span>
             <strong class="home-recent-row__price">{{ item.get_display_price }}</strong>
@@ -183,7 +183,17 @@
     <div class="home-cta__topline"><span>THE CAMPUS CIRCULAR</span><span>GOOD THINGS, IN GOOD COMPANY.</span></div>
     <div class="home-cta__main">
         <div><span class="home-section-index">05 / YOUR TURN</span><h2>Make room for<br><em>another story.</em></h2></div>
-        <div class="home-cta__action"><p>Got something gathering dust? Someone else might need it next week.</p><a href="{% url 'register' %}" class="home-cta__button">Join the community <span aria-hidden="true">↗</span></a></div>
+        <div class="home-cta__action">
+            {% if request.user.is_authenticated %}
+                <p>Find something useful or help another student find what they need.</p>
+                <a href="{% url 'explore' %}" class="home-cta__button">Explore Items <span aria-hidden="true">↗</span></a>
+                <a href="{% url 'board' %}" class="home-cta__button">Browse Requests <span aria-hidden="true">↗</span></a>
+            {% else %}
+                <p>Got something gathering dust? Someone else might need it next week.</p>
+                <a href="{% url 'register' %}" class="home-cta__button">Join Community <span aria-hidden="true">↗</span></a>
+                <a href="{% url 'login' %}" class="home-cta__button">Login <span aria-hidden="true">↗</span></a>
+            {% endif %}
+        </div>
     </div>
     <span class="home-cta__asterisk" aria-hidden="true">✳</span>
 </section>

@@ -2,9 +2,49 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.conf import settings
+from django.contrib.auth.views import PasswordResetView
+from django.urls import reverse_lazy
 from .forms import RegisterForm, LoginForm, ProfileEditForm
 from .models import User
 from items.models import Item
+
+
+class CampusPasswordResetView(PasswordResetView):
+    template_name = 'users/password_reset_form.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+
+    def email_backend_available(self):
+        backend = settings.EMAIL_BACKEND
+        if backend.endswith(('console.EmailBackend', 'locmem.EmailBackend')):
+            return True
+        if backend != 'django.core.mail.backends.smtp.EmailBackend':
+            return True
+        return bool(
+            settings.EMAIL_HOST
+            and settings.EMAIL_FROM_ADDRESS_CONFIGURED
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['email_backend_is_console'] = settings.EMAIL_BACKEND.endswith(
+            'console.EmailBackend'
+        )
+        context['email_delivery_configured'] = self.email_backend_available()
+        return context
+
+    def form_valid(self, form):
+        if not self.email_backend_available():
+            return self.render_to_response(
+                self.get_context_data(
+                    form=form,
+                    email_delivery_unavailable=True,
+                ),
+                status=503,
+            )
+        return super().form_valid(form)
 
 
 def register_view(request):

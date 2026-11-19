@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=6">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -34,6 +34,11 @@
 
             {% if request.user.is_authenticated %}
                 <a class="nav-cta" href="{% url 'post_item' %}">＋ Sell Something</a>
+                <a class="nav-link" href="{% url 'inbox' %}">Messages{% if unread_message_count %}<span class="nav-unread">{% if unread_message_count > 99 %}99+{% else %}{{ unread_message_count }}{% endif %}</span>{% endif %}</a>
+                <a class="nav-link" href="{% url 'notifications' %}" aria-label="Notifications">
+                    <span aria-hidden="true">&#128276;</span> Notifications
+                    {% if unread_notification_count %}<span class="nav-unread">{% if unread_notification_count > 99 %}99+{% else %}{{ unread_notification_count }}{% endif %}</span>{% endif %}
+                </a>
                 <a class="nav-link" href="{% url 'dashboard' %}">
                     {{ request.user.first_name|default:request.user.username }}
                 </a>
@@ -68,7 +73,7 @@
     <small>© 2026 ReUse Campus. Made for students.</small>
 </footer>
 
-<script src="{% static 'js/main.js' %}?v=2"></script>
+<script src="{% static 'js/main.js' %}?v=3"></script>
 <script>
     // Small progressive-enhancement fallback for the responsive navigation.
     document.addEventListener("DOMContentLoaded", function () {

@@ -51,9 +51,27 @@ class Item(models.Model):
     def __str__(self):
         return f'{self.title} ({self.get_listing_type_display()}) by {self.owner.username}'
 
+    @property
+    def image_url(self):
+        """Public media URL when a photo is stored and the file is still present."""
+        if not self.image or not self.image.name:
+            return ''
+        try:
+            if not self.image.storage.exists(self.image.name):
+                return ''
+            return self.image.url
+        except (OSError, ValueError):
+            return ''
+
+    @staticmethod
+    def _rupee_text(amount):
+        if amount == amount.to_integral_value():
+            return str(int(amount))
+        return f'{amount:.2f}'
+
     def get_display_price(self):
-        if self.listing_type == 'sell' and self.price:
-            return f'\u20b9{self.price}'
-        elif self.listing_type == 'rent' and self.rent_per_day:
-            return f'\u20b9{self.rent_per_day}/day'
+        if self.listing_type == 'sell' and self.price is not None:
+            return f'\u20b9{self._rupee_text(self.price)}'
+        if self.listing_type == 'rent' and self.rent_per_day is not None:
+            return f'\u20b9{self._rupee_text(self.rent_per_day)}/day'
         return 'Contact for price'

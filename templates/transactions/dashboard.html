@@ -42,8 +42,8 @@
             <div class="dashboard-list">
                 {% for item in my_items %}
                     <a href="{% url 'item_detail' item.pk %}" class="dashboard-list-row">
-                        {% if item.image %}
-                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        {% if item.image_url %}
+                            <img src="{{ item.image_url }}" alt="{{ item.title }}">
                         {% else %}
                             <div class="dashboard-image-placeholder">R</div>
                         {% endif %}
@@ -74,11 +74,14 @@
         {% if incoming_buy_requests %}
             <div class="request-card-grid">
                 {% for buy_request in incoming_buy_requests %}
-                    <article class="dashboard-request-card">
+                    <article id="buy-request-{{ buy_request.pk }}" class="dashboard-request-card">
                         <span class="request-type">BUY REQUEST</span>
                         <h3>{{ buy_request.item.title }}</h3>
                         <p class="request-person">
                             From {{ buy_request.requester.get_full_name|default:buy_request.requester.username }}
+                        </p>
+                        <p class="request-email">
+                            <a href="mailto:{{ buy_request.requester.email }}">{{ buy_request.requester.email }}</a>
                         </p>
 
                         {% if buy_request.message %}
@@ -88,6 +91,7 @@
                         <small>Received {{ buy_request.created_at|date:"d M Y" }}</small>
 
                         <div class="request-actions">
+                            <a class="outline-button small-button" href="{% url 'start_conversation_item' buy_request.requester.username buy_request.item.pk %}">Message</a>
                             <form method="POST" action="{% url 'approve_buy_request' buy_request.pk %}">
                                 {% csrf_token %}
                                 <button type="submit" class="editorial-button small-button">Approve</button>
@@ -117,11 +121,14 @@
         {% if incoming_rent_requests %}
             <div class="request-card-grid">
                 {% for rent_request in incoming_rent_requests %}
-                    <article class="dashboard-request-card">
+                    <article id="rent-request-{{ rent_request.pk }}" class="dashboard-request-card">
                         <span class="request-type">RENT REQUEST</span>
                         <h3>{{ rent_request.item.title }}</h3>
                         <p class="request-person">
                             From {{ rent_request.requester.get_full_name|default:rent_request.requester.username }}
+                        </p>
+                        <p class="request-email">
+                            <a href="mailto:{{ rent_request.requester.email }}">{{ rent_request.requester.email }}</a>
                         </p>
 
                         <div class="request-details">
@@ -135,6 +142,7 @@
                         {% endif %}
 
                         <div class="request-actions">
+                            <a class="outline-button small-button" href="{% url 'start_conversation_item' rent_request.requester.username rent_request.item.pk %}">Message</a>
                             <form method="POST" action="{% url 'approve_rent_request' rent_request.pk %}">
                                 {% csrf_token %}
                                 <button type="submit" class="editorial-button small-button">Approve</button>
@@ -210,7 +218,7 @@
         {% if my_buy_requests %}
             <div class="dashboard-list">
                 {% for buy_request in my_buy_requests %}
-                    <div class="dashboard-list-row request-history-row">
+                    <div id="my-buy-request-{{ buy_request.pk }}" class="dashboard-list-row request-history-row">
                         <div class="dashboard-list-info">
                             <strong>{{ buy_request.item.title }}</strong>
                             <span>Requested {{ buy_request.created_at|date:"d M Y" }}</span>
@@ -249,7 +257,7 @@
         {% if my_rent_requests %}
             <div class="dashboard-list">
                 {% for rent_request in my_rent_requests %}
-                    <div class="dashboard-list-row request-history-row">
+                    <div id="my-rent-request-{{ rent_request.pk }}" class="dashboard-list-row request-history-row">
                         <div class="dashboard-list-info">
                             <strong>{{ rent_request.item.title }}</strong>
                             <span>
