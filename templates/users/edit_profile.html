@@ -27,9 +27,9 @@
 
             <div class="profile-picture-edit">
 
-                {% if request.user.profile.profile_pic %}
+                {% if request.user.profile_pic %}
                     <img
-                        src="{{ request.user.profile.profile_pic.url }}"
+                        src="{{ request.user.profile_pic.url }}"
                         alt="Current profile picture"
                     >
                 {% else %}

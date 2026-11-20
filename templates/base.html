@@ -5,23 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Buy, sell and rent essentials with students around your campus.">
-    <meta name="theme-color" content="#0b1018">
+    <meta name="theme-color" content="#F7F7F4">
 
     <title>{% block title %}ReUse Campus{% endblock %}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=11">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
 <header class="site-header">
     <nav class="site-nav" aria-label="Main navigation">
         <a class="nav-brand" href="{% url 'home' %}" aria-label="ReUse Campus home">
-            <span class="nav-brand__mark" aria-hidden="true">R</span>
-            <span>ReUse <strong>Campus</strong><i>.</i></span>
+            <span class="nav-brand__mark" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" fill="currentColor"/><path d="M9 21c7-1 12-6 14-13 2 9-2 17-11 17" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M9 23 22 10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <span>ReUse <strong>Campus</strong></span>
         </a>
 
         <button class="nav-toggle" type="button"
@@ -32,21 +34,21 @@
         </button>
 
         <div class="nav-links" id="primary-navigation">
-            <a class="nav-link {% if request.resolver_match.url_name == 'explore' or request.resolver_match.url_name == 'item_detail' or request.resolver_match.url_name == 'request_to_buy' or request.resolver_match.url_name == 'request_to_rent' %}is-active{% endif %}" href="{% url 'explore' %}">Explore Items</a>
-            <a class="nav-link {% if request.resolver_match.url_name == 'board' or request.resolver_match.url_name == 'post_board_request' %}is-active{% endif %}" href="{% url 'board' %}">Request Board</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}">Home</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'explore' or request.resolver_match.url_name == 'item_detail' or request.resolver_match.url_name == 'request_to_buy' or request.resolver_match.url_name == 'request_to_rent' %}is-active{% endif %}" href="{% url 'explore' %}">Browse</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'board' or request.resolver_match.url_name == 'post_board_request' %}is-active{% endif %}" href="{% url 'board' %}">Requests</a>
 
             {% if request.user.is_authenticated %}
-                <a class="nav-cta {% if request.resolver_match.url_name == 'post_item' or request.resolver_match.url_name == 'edit_item' %}is-active{% endif %}" href="{% url 'post_item' %}"><span aria-hidden="true">＋</span> List an item</a>
                 <a class="nav-link nav-messages {% if request.resolver_match.url_name == 'inbox' or request.resolver_match.url_name == 'conversation' %}is-active{% endif %}" href="{% url 'inbox' %}">
                     Messages{% if unread_message_count %}<span class="nav-unread">{% if unread_message_count > 99 %}99+{% else %}{{ unread_message_count }}{% endif %}</span>{% endif %}
                 </a>
-                <details class="notification-menu">
+                <details class="notification-menu {% if request.resolver_match.url_name == 'notifications' %}is-active{% endif %}">
                     <summary class="nav-link notification-trigger" aria-label="Notifications{% if unread_notification_count %}, {{ unread_notification_count }} unread{% endif %}">
                         <svg class="notification-bell" aria-hidden="true" viewBox="0 0 24 24" fill="none">
                             <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M10 21h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
                         </svg>
-                        <span class="notification-trigger__label">Alerts</span>
+                        <span class="notification-trigger__label">Notifications</span>
                         {% if unread_notification_count %}<span class="nav-unread">{% if unread_notification_count > 99 %}99+{% else %}{{ unread_notification_count }}{% endif %}</span>{% endif %}
                     </summary>
                     <div class="notification-popover">
@@ -65,14 +67,30 @@
                         {% empty %}
                             <p class="notification-preview-empty">New messages and requests will appear here.</p>
                         {% endfor %}
-                        <a class="notification-popover__all" href="{% url 'notifications' %}">Open Action Centre <span aria-hidden="true">↗</span></a>
+                        <a class="notification-popover__all" href="{% url 'notifications' %}">All notifications <span aria-hidden="true">↗</span></a>
                     </div>
                 </details>
-                <a class="nav-profile {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'edit_profile' or request.resolver_match.url_name == 'my_items' %}is-active{% endif %}" href="{% url 'dashboard' %}" aria-label="Dashboard for {{ request.user.first_name|default:request.user.username }}">
-                    <span class="nav-avatar" aria-hidden="true">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span>
-                    <span class="nav-profile__name">{{ request.user.first_name|default:request.user.username }}</span>
-                </a>
-                <a class="nav-link nav-logout" href="{% url 'logout' %}">Log out</a>
+                <a class="nav-cta {% if request.resolver_match.url_name == 'post_item' or request.resolver_match.url_name == 'edit_item' %}is-active{% endif %}" href="{% url 'post_item' %}">List an item <span aria-hidden="true">+</span></a>
+                <details class="profile-menu">
+                    <summary class="nav-profile {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'edit_profile' or request.resolver_match.url_name == 'my_items' %}is-active{% endif %}" aria-label="Profile menu">
+                        <span class="nav-avatar" aria-hidden="true">
+                            {% if request.user.profile_pic %}
+                                <img src="{{ request.user.profile_pic.url }}" alt="">
+                            {% else %}
+                                {{ request.user.first_name|default:request.user.username|slice:":1"|upper }}
+                            {% endif %}
+                        </span>
+                        <span class="nav-profile__name">{{ request.user.first_name|default:request.user.username }}</span>
+                        <span class="profile-menu__chevron" aria-hidden="true">⌄</span>
+                    </summary>
+                    <div class="profile-menu__panel">
+                        <a href="{% url 'dashboard' %}">Dashboard</a>
+                        <a href="{% url 'profile' request.user.username %}">My profile</a>
+                        <a href="{% url 'my_items' %}">My listings</a>
+                        <a href="{% url 'edit_profile' %}">Account settings</a>
+                        <a href="{% url 'logout' %}">Log out</a>
+                    </div>
+                </details>
             {% else %}
                 <a class="nav-link {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}" href="{% url 'login' %}">Log in</a>
                 <a class="nav-cta" href="{% url 'register' %}">Join community <span aria-hidden="true">↗</span></a>
@@ -96,17 +114,17 @@
 <footer>
     <div class="footer-brand">
         <a href="{% url 'home' %}">ReUse Campus<span>.</span></a>
-        <small>A greener campus, together.</small>
+        <small>Good things find a second life.</small>
     </div>
     <nav aria-label="Footer navigation">
         <a href="{% url 'home' %}">Home</a>
-        <a href="{% url 'explore' %}">Explore Items</a>
-        <a href="{% url 'board' %}">Request Board</a>
+        <a href="{% url 'explore' %}">Browse</a>
+        <a href="{% url 'board' %}">Requests</a>
     </nav>
     <small>© 2026 ReUse Campus · Made for students.</small>
 </footer>
 
-<script src="{% static 'js/main.js' %}?v=4"></script>
+<script src="{% static 'js/main.js' %}?v=5"></script>
 <script>
     // Small progressive-enhancement fallback for the responsive navigation.
     document.addEventListener("DOMContentLoaded", function () {

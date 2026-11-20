@@ -7,9 +7,9 @@
     <div class="profile-hero">
 
         <div class="profile-avatar">
-            {% if profile_user.profile.profile_pic %}
+            {% if profile_user.profile_pic %}
                 <img
-                    src="{{ profile_user.profile.profile_pic.url }}"
+                    src="{{ profile_user.profile_pic.url }}"
                     alt="{{ profile_user.username }}"
                 >
             {% else %}

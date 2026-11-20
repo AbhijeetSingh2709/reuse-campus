@@ -11,12 +11,9 @@
                 <span></span> THE CAMPUS COMMUNITY BOARD
             </span>
 
-            <h1>Ask the campus.<br><em>Someone might have it.</em></h1>
+            <h1>Need something?<br><em>Ask the campus.</em></h1>
 
-            <p>
-                Looking for something you can't find? Put it out there.
-                Your next useful connection could be just a few blocks away.
-            </p>
+            <p>Post a request. A student nearby may have it.</p>
         </div>
 
         <aside class="board-masthead__aside">
@@ -121,7 +118,11 @@
                 <div class="board-card__bottom">
                     <div class="board-card__person">
                         <span class="board-card__avatar">
-                            {{ br.posted_by.get_full_name|default:br.posted_by.username|slice:":1"|upper }}
+                            {% if br.posted_by.profile_pic %}
+                                <img src="{{ br.posted_by.profile_pic.url }}" alt="">
+                            {% else %}
+                                {{ br.posted_by.get_full_name|default:br.posted_by.username|slice:":1"|upper }}
+                            {% endif %}
                         </span>
 
                         <span>
@@ -195,7 +196,7 @@
 
     <div class="board-footnote">
         <span>✳</span>
-        A campus works better when we help each other out.
+        Find it here. Pass it on.
     </div>
 
 </section>
