@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -5,9 +6,10 @@ from django.db import transaction
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from items.models import Item
+from messaging.models import Notification
+from messaging.services import create_notification
 from .models import BuyRequest, RentRequest
 from .forms import BuyRequestForm, RentRequestForm
-from messaging.services import create_notification
 
 
 def _notify_request_status(item_request, actor, status):
@@ -29,6 +31,32 @@ def _notify_request_status(item_request, actor, status):
         target_url=f"{reverse('dashboard')}#{request_anchor}-{item_request.pk}",
         dedupe_key=f'{item_request._meta.model_name}:{item_request.pk}:{status}',
     )
+
+
+def _mark_action_notification_read(request, item_request):
+    notification_id = request.POST.get('notification_id')
+    if not notification_id:
+        return False
+    try:
+        notification_id = int(notification_id)
+    except ValueError:
+        return False
+
+    content_type = ContentType.objects.get_for_model(item_request)
+    notification = Notification.objects.filter(
+        pk=notification_id,
+        recipient=request.user,
+        notification_type='item_requested',
+        content_type=content_type,
+        object_id=item_request.pk,
+        is_read=False,
+    ).first()
+    if notification is None:
+        return False
+
+    notification.is_read = True
+    notification.save(update_fields=['is_read'])
+    return True
 
 
 @login_required
@@ -108,6 +136,7 @@ def request_to_rent(request, pk):
 @login_required
 @require_POST
 def approve_buy_request(request, req_id):
+    acted_from_notification = False
     with transaction.atomic():
         buy_req = get_object_or_404(
             BuyRequest.objects.select_for_update().select_related('item', 'requester'),
@@ -136,14 +165,16 @@ def approve_buy_request(request, req_id):
             other_request.status = 'rejected'
             other_request.save(update_fields=['status'])
             _notify_request_status(other_request, request.user, 'rejected')
+        acted_from_notification = _mark_action_notification_read(request, buy_req)
 
     messages.success(request, f'Request by {buy_req.requester.username} approved. Item marked as sold.')
-    return redirect('dashboard')
+    return redirect('notifications' if acted_from_notification else 'dashboard')
 
 
 @login_required
 @require_POST
 def reject_buy_request(request, req_id):
+    acted_from_notification = False
     with transaction.atomic():
         buy_req = get_object_or_404(
             BuyRequest.objects.select_for_update().select_related('item', 'requester'),
@@ -158,14 +189,16 @@ def reject_buy_request(request, req_id):
         buy_req.status = 'rejected'
         buy_req.save(update_fields=['status'])
         _notify_request_status(buy_req, request.user, 'rejected')
+        acted_from_notification = _mark_action_notification_read(request, buy_req)
 
     messages.info(request, f'Request by {buy_req.requester.username} rejected.')
-    return redirect('dashboard')
+    return redirect('notifications' if acted_from_notification else 'dashboard')
 
 
 @login_required
 @require_POST
 def approve_rent_request(request, req_id):
+    acted_from_notification = False
     with transaction.atomic():
         rent_req = get_object_or_404(
             RentRequest.objects.select_for_update().select_related('item', 'requester'),
@@ -194,17 +227,19 @@ def approve_rent_request(request, req_id):
             other_request.status = 'rejected'
             other_request.save(update_fields=['status'])
             _notify_request_status(other_request, request.user, 'rejected')
+        acted_from_notification = _mark_action_notification_read(request, rent_req)
 
     messages.success(
         request,
         f'Rent request by {rent_req.requester.username} approved. Item is now rented out.'
     )
-    return redirect('dashboard')
+    return redirect('notifications' if acted_from_notification else 'dashboard')
 
 
 @login_required
 @require_POST
 def reject_rent_request(request, req_id):
+    acted_from_notification = False
     with transaction.atomic():
         rent_req = get_object_or_404(
             RentRequest.objects.select_for_update().select_related('item', 'requester'),
@@ -219,9 +254,10 @@ def reject_rent_request(request, req_id):
         rent_req.status = 'rejected'
         rent_req.save(update_fields=['status'])
         _notify_request_status(rent_req, request.user, 'rejected')
+        acted_from_notification = _mark_action_notification_read(request, rent_req)
 
     messages.info(request, f'Rent request by {rent_req.requester.username} rejected.')
-    return redirect('dashboard')
+    return redirect('notifications' if acted_from_notification else 'dashboard')
 
 
 @login_required

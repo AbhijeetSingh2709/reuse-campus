@@ -1,52 +1,96 @@
 {% extends 'base.html' %}
-{% block title %}Notifications — ReUse Campus{% endblock %}
+{% block title %}Action Centre — ReUse Campus{% endblock %}
 
 {% block content %}
-<section class="editorial-page">
-    <div class="editorial-heading">
-        <span class="eyebrow">YOUR UPDATES</span>
-        <h1>Notifications</h1>
-        <p>Requests, replies and messages from your campus community.</p>
-    </div>
-
-    <div class="dashboard-section">
-        <div class="dashboard-section-heading">
-            <div>
-                <span class="eyebrow">RECENT ACTIVITY</span>
-                <h2>Your notifications</h2>
-            </div>
-            {% if unread_notification_count %}
-                <form method="POST" action="{% url 'mark_all_notifications_read' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="outline-button small-button">Mark all as read</button>
-                </form>
-            {% endif %}
+<section class="editorial-page action-centre">
+    <header class="editorial-heading action-centre__heading">
+        <div>
+            <span class="eyebrow">YOUR CAMPUS ACTIVITY</span>
+            <h1>Action <em>Centre.</em></h1>
+            <p>Requests, replies and updates that need your attention.</p>
         </div>
+        {% if unread_notification_count %}
+            <form method="POST" action="{% url 'mark_all_notifications_read' %}">
+                {% csrf_token %}
+                <button type="submit" class="button button--quiet">Mark all as read</button>
+            </form>
+        {% endif %}
+    </header>
 
-        {% if notifications %}
-            <div class="dashboard-list">
-                {% for notification in notifications %}
-                    <div class="dashboard-list-row">
-                        <div class="dashboard-list-info">
-                            <a href="{% url 'open_notification' notification.pk %}">
-                                <strong>{{ notification.message }}</strong>
-                            </a>
-                            <span>{{ notification.created_at|date:"d M Y, H:i" }}</span>
+    {% if notification_rows %}
+        <div class="action-centre__list">
+            {% for row in notification_rows %}
+                <article class="notification-card {% if not row.notification.is_read %}notification-card--unread{% endif %}">
+                    <span class="notification-card__icon" aria-hidden="true">
+                        {% if row.notification.notification_type == 'item_requested' %}↗
+                        {% elif row.notification.notification_type == 'board_response' %}⌁
+                        {% elif row.notification.notification_type == 'message' %}✉
+                        {% elif row.notification.notification_type == 'request_fulfilled' %}✓
+                        {% else %}◈{% endif %}
+                    </span>
+
+                    <div class="notification-card__body">
+                        <div class="notification-card__meta">
+                            <span class="notification-type">{{ row.notification.get_notification_type_display }}</span>
+                            <time datetime="{{ row.notification.created_at|date:'c' }}" title="{{ row.notification.created_at|date:'d M Y, H:i' }}">
+                                {{ row.notification.created_at|timesince }} ago
+                            </time>
                         </div>
-                        {% if not notification.is_read %}
-                            <form method="POST" action="{% url 'mark_notification_read' notification.pk %}">
+                        <a class="notification-card__message" href="{% url 'open_notification' row.notification.pk %}">
+                            {{ row.notification.message }}
+                        </a>
+                        {% if row.status_label %}
+                            <span class="status-label {{ row.status_class }}">{{ row.status_label }}</span>
+                        {% endif %}
+
+                        {% if row.message_url or row.details_url or row.approve_url or row.reject_url %}
+                            <div class="notification-card__actions">
+                                {% if row.approve_url %}
+                                    <form method="POST" action="{{ row.approve_url }}" class="notification-action-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="notification_id" value="{{ row.notification.pk }}">
+                                        <button type="submit" class="button button--primary" data-loading-label="Approving…">Approve</button>
+                                        <span class="sr-only" data-action-status aria-live="polite"></span>
+                                    </form>
+                                {% endif %}
+                                {% if row.reject_url %}
+                                    <form method="POST" action="{{ row.reject_url }}" class="notification-action-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="notification_id" value="{{ row.notification.pk }}">
+                                        <button type="submit" class="button button--danger-quiet" data-loading-label="Rejecting…">Reject</button>
+                                        <span class="sr-only" data-action-status aria-live="polite"></span>
+                                    </form>
+                                {% endif %}
+                                {% if row.message_url %}
+                                    <a class="button button--secondary" href="{{ row.message_url }}">{{ row.message_label }}</a>
+                                {% endif %}
+                                {% if row.details_url %}
+                                    <a class="button button--quiet" href="{{ row.details_url }}">{{ row.details_label }}</a>
+                                {% endif %}
+                            </div>
+                        {% elif row.show_mark_read %}
+                            <form method="POST" action="{% url 'mark_notification_read' row.notification.pk %}" class="notification-card__read-form">
                                 {% csrf_token %}
-                                <button type="submit" class="outline-button small-button">Mark as read</button>
+                                <button type="submit" class="button button--quiet">Mark as read</button>
                             </form>
-                        {% else %}
+                        {% elif row.notification.is_read %}
                             <span class="status-label">Read</span>
                         {% endif %}
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="dashboard-empty">You don't have any notifications yet.</p>
-        {% endif %}
-    </div>
+
+                    {% if not row.notification.is_read %}
+                        <span class="notification-card__unread" aria-label="Unread"></span>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state-block action-centre__empty">
+            <span class="empty-icon" aria-hidden="true">✦</span>
+            <h2>You're all caught up.</h2>
+            <p>New messages, item requests and Request Board replies will appear here.</p>
+            <a href="{% url 'explore' %}" class="button button--primary">Explore Items <span aria-hidden="true">↗</span></a>
+        </div>
+    {% endif %}
 </section>
 {% endblock %}

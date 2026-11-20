@@ -6,30 +6,27 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from .models import Conversation
+from .models import Conversation, Notification
 from .forms import MessageForm
 from users.models import User
 from items.models import Item
 from transactions.models import BuyRequest, RentRequest
 from board.models import BoardRequest
-from .models import Notification
 from .services import create_notification
 
 
-@login_required
-def inbox_view(request):
-    """List all conversations for the current user."""
+def _conversation_list_for(user):
     conversations = Conversation.objects.filter(
-        participants=request.user
+        participants=user
     ).select_related('item', 'board_request').prefetch_related(
         'participants', 'messages'
     ).order_by('-updated_at')
 
     conversation_list = []
     for conv in conversations:
-        other_user = conv.get_other_user(request.user)
+        other_user = conv.get_other_user(user)
         last_msg = conv.last_message()
-        unread_count = conv.messages.filter(is_read=False).exclude(sender=request.user).count()
+        unread_count = conv.messages.filter(is_read=False).exclude(sender=user).count()
         conversation_list.append({
             'conversation': conv,
             'other_user': other_user,
@@ -38,8 +35,14 @@ def inbox_view(request):
             'item': conv.item,
         })
 
+    return conversation_list
+
+
+@login_required
+def inbox_view(request):
+    """List all conversations for the current user."""
     return render(request, 'messaging/inbox.html', {
-        'conversation_list': conversation_list,
+        'conversation_list': _conversation_list_for(request.user),
     })
 
 
@@ -90,6 +93,7 @@ def conversation_view(request, conv_id):
         'other_user': other_user,
         'all_messages': all_messages,
         'form': form,
+        'conversation_list': _conversation_list_for(request.user),
     })
 
 
@@ -184,9 +188,126 @@ def notifications_view(request):
     notifications = Notification.objects.filter(
         recipient=request.user,
     ).select_related('actor', 'content_type')
+    notification_rows = []
+    for notification in notifications:
+        action_data = _notification_action_data(notification, request.user)
+        has_action = any((
+            action_data['message_destination'],
+            action_data['details_destination'],
+            action_data['approve_url'],
+            action_data['reject_url'],
+        ))
+        notification_rows.append({
+            'notification': notification,
+            'status_label': action_data['status_label'],
+            'status_class': action_data['status_class'],
+            'message_url': (
+                f"{reverse('open_notification', args=[notification.pk])}?action=message"
+                if action_data['message_destination'] else ''
+            ),
+            'message_label': action_data['message_label'],
+            'details_url': (
+                f"{reverse('open_notification', args=[notification.pk])}?action=details"
+                if action_data['details_destination'] else ''
+            ),
+            'details_label': action_data['details_label'],
+            'approve_url': action_data['approve_url'],
+            'reject_url': action_data['reject_url'],
+            'show_mark_read': not notification.is_read and not has_action,
+        })
+
     return render(request, 'messaging/notifications.html', {
-        'notifications': notifications,
+        'notification_rows': notification_rows,
     })
+
+
+def _notification_action_data(notification, user):
+    data = {
+        'status_label': '',
+        'status_class': '',
+        'message_destination': '',
+        'message_label': '',
+        'details_destination': '',
+        'details_label': '',
+        'approve_url': '',
+        'reject_url': '',
+    }
+    target = notification.content_object
+    notification_type = notification.notification_type
+
+    if notification_type == 'item_requested' and isinstance(target, (BuyRequest, RentRequest)):
+        if target.item.owner_id != user.pk:
+            return data
+
+        data['status_label'] = target.get_status_display()
+        data['status_class'] = f'status-{target.status}'
+        data['message_destination'] = reverse(
+            'start_conversation_item',
+            args=[target.requester.username, target.item_id],
+        )
+        data['message_label'] = 'Message'
+        if target.status == 'pending':
+            if isinstance(target, BuyRequest):
+                data['approve_url'] = reverse('approve_buy_request', args=[target.pk])
+                data['reject_url'] = reverse('reject_buy_request', args=[target.pk])
+            else:
+                data['approve_url'] = reverse('approve_rent_request', args=[target.pk])
+                data['reject_url'] = reverse('reject_rent_request', args=[target.pk])
+
+    elif notification_type in {'item_approved', 'item_rejected'} and isinstance(
+        target, (BuyRequest, RentRequest)
+    ):
+        if target.requester_id != user.pk:
+            return data
+        data['status_label'] = target.get_status_display()
+        data['status_class'] = f'status-{target.status}'
+        data['details_destination'] = reverse('item_detail', args=[target.item_id])
+        data['details_label'] = 'View Details'
+        data['message_destination'] = reverse(
+            'start_conversation_item',
+            args=[target.item.owner.username, target.item_id],
+        )
+        data['message_label'] = 'Message'
+
+    elif notification_type == 'board_response' and isinstance(target, Conversation):
+        if not target.participants.filter(pk=user.pk).exists():
+            return data
+        data['message_destination'] = reverse('conversation', args=[target.pk])
+        data['message_label'] = 'Message'
+        if target.board_request_id:
+            data['details_destination'] = (
+                f"{reverse('board')}#board-request-{target.board_request_id}"
+            )
+            data['details_label'] = 'View Request'
+
+    elif notification_type == 'message' and isinstance(target, Conversation):
+        if not target.participants.filter(pk=user.pk).exists():
+            return data
+        data['message_destination'] = reverse('conversation', args=[target.pk])
+        data['message_label'] = 'Reply'
+
+    elif notification_type == 'request_fulfilled' and isinstance(target, BoardRequest):
+        data['status_label'] = 'Fulfilled' if target.is_fulfilled else 'Open'
+        data['status_class'] = 'status-fulfilled' if target.is_fulfilled else 'status-open'
+        data['details_destination'] = (
+            f"{reverse('board')}?fulfilled=1#board-request-{target.pk}"
+        )
+        data['details_label'] = 'View Details'
+
+    elif notification_type == 'transaction_status' and isinstance(target, RentRequest):
+        if target.requester_id != user.pk:
+            return data
+        data['status_label'] = target.get_status_display()
+        data['status_class'] = f'status-{target.status}'
+        data['details_destination'] = reverse('item_detail', args=[target.item_id])
+        data['details_label'] = 'View Details'
+        data['message_destination'] = reverse(
+            'start_conversation_item',
+            args=[target.item.owner.username, target.item_id],
+        )
+        data['message_label'] = 'Message'
+
+    return data
 
 
 @login_required
@@ -200,7 +321,12 @@ def open_notification(request, notification_id):
         notification.is_read = True
         notification.save(update_fields=['is_read'])
 
-    destination = notification.target_url
+    action = request.GET.get('action')
+    action_data = _notification_action_data(notification, request.user)
+    destination = {
+        'message': action_data['message_destination'],
+        'details': action_data['details_destination'],
+    }.get(action, '') or notification.target_url
     if (
         not destination.startswith('/')
         or destination.startswith('//')

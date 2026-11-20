@@ -2,58 +2,68 @@
 {% block title %}Messages — ReUse Campus{% endblock %}
 
 {% block content %}
-<section class="editorial-page">
-    <div class="editorial-heading">
-        <span class="eyebrow">YOUR CONVERSATIONS</span>
-        <h1>Messages</h1>
-        <p>Chat with other students about items and Request Board posts.</p>
-    </div>
+<section class="editorial-page messaging-page">
+    <header class="editorial-heading">
+        <span class="eyebrow">YOUR PRIVATE CAMPUS CHATS</span>
+        <h1>Messages<span class="heading-period">.</span></h1>
+        <p>Talk through item exchanges and Request Board responses.</p>
+    </header>
 
-    {% if conversation_list %}
-        <div class="conversation-list">
-            {% for entry in conversation_list %}
-                <a href="{% url 'conversation' entry.conversation.pk %}" class="conversation-preview {% if entry.unread_count > 0 %}conversation-unread{% endif %}">
-                    <div class="conversation-avatar">
-                        {% if entry.other_user and entry.other_user.profile_pic %}
-                            <img src="{{ entry.other_user.profile_pic.url }}" alt="{{ entry.other_user.username }}">
-                        {% else %}
-                            <span>{{ entry.other_user.first_name|first|upper|default:"?" }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="conversation-info">
-                        <div class="conversation-top-row">
-                            <strong>{% if entry.other_user %}{{ entry.other_user.get_full_name|default:entry.other_user.username }}{% else %}Former member{% endif %}</strong>
-                            {% if entry.other_user.email %}<span>{{ entry.other_user.email }}</span>{% endif %}
-                            {% if entry.last_message %}
-                                <span class="conversation-time">{{ entry.last_message.created_at|timesince }} ago</span>
-                            {% endif %}
-                        </div>
-                        {% if entry.item %}
-                            <span class="conversation-item-tag">Re: {{ entry.item.title }}</span>
-                        {% elif entry.conversation.board_request %}
-                            <span class="conversation-item-tag">Request: {{ entry.conversation.board_request.title }}</span>
-                        {% endif %}
-                        {% if entry.last_message %}
-                            <p class="conversation-last-msg">
-                                {% if entry.last_message.sender == request.user %}You: {% endif %}{{ entry.last_message.body|truncatechars:80 }}
-                            </p>
-                        {% else %}
-                            <p class="conversation-last-msg">No messages yet</p>
-                        {% endif %}
-                    </div>
-                    {% if entry.unread_count > 0 %}
-                        <span class="unread-badge">{{ entry.unread_count }}</span>
-                    {% endif %}
-                </a>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state-block">
-            <span class="empty-icon" aria-hidden="true">💬</span>
-            <h3>No conversations yet</h3>
-            <p>When you message a seller about an item, your conversations will appear here.</p>
-            <a href="{% url 'explore' %}" class="editorial-button">Browse listings</a>
-        </div>
-    {% endif %}
+    <div class="messaging-shell">
+        <aside class="conversation-sidebar" aria-label="Conversations">
+            <div class="conversation-sidebar__heading">
+                <div><span class="eyebrow">INBOX</span><h2>Your conversations</h2></div>
+                <span class="conversation-total">{{ conversation_list|length }}</span>
+            </div>
+            {% if conversation_list %}
+                <div class="conversation-list">
+                    {% for entry in conversation_list %}
+                        <a href="{% url 'conversation' entry.conversation.pk %}" class="conversation-preview {% if entry.unread_count > 0 %}conversation-unread{% endif %}">
+                            <span class="conversation-avatar">
+                                {% if entry.other_user and entry.other_user.profile_pic %}
+                                    <img src="{{ entry.other_user.profile_pic.url }}" alt="">
+                                {% else %}
+                                    <span>{{ entry.other_user.first_name|first|upper|default:"?" }}</span>
+                                {% endif %}
+                            </span>
+                            <span class="conversation-info">
+                                <span class="conversation-top-row">
+                                    <strong>{% if entry.other_user %}{{ entry.other_user.get_full_name|default:entry.other_user.username }}{% else %}Former member{% endif %}</strong>
+                                    {% if entry.last_message %}<time class="conversation-time">{{ entry.last_message.created_at|timesince }} ago</time>{% endif %}
+                                </span>
+                                {% if entry.item %}
+                                    <span class="conversation-item-tag">Item · {{ entry.item.title }}</span>
+                                {% elif entry.conversation.board_request %}
+                                    <span class="conversation-item-tag">Request · {{ entry.conversation.board_request.title }}</span>
+                                {% endif %}
+                                {% if entry.last_message %}
+                                    <span class="conversation-last-msg">{% if entry.last_message.sender == request.user %}You: {% endif %}{{ entry.last_message.body|truncatechars:76 }}</span>
+                                {% else %}
+                                    <span class="conversation-last-msg">Start the conversation</span>
+                                {% endif %}
+                            </span>
+                            {% if entry.unread_count > 0 %}<span class="unread-badge" aria-label="{{ entry.unread_count }} unread messages">{{ entry.unread_count }}</span>{% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="conversation-list-empty">
+                    <p>Your item and Request Board conversations will show up here.</p>
+                    <a href="{% url 'explore' %}" class="text-link">Browse items ↗</a>
+                </div>
+            {% endif %}
+        </aside>
+
+        <section class="chat-welcome-panel">
+            <div class="chat-welcome-panel__orb" aria-hidden="true">↔</div>
+            <span class="eyebrow">A BETTER CAMPUS, TOGETHER</span>
+            <h2>Good things start<br>with a <em>conversation.</em></h2>
+            <p>Select a chat to continue, or find something useful to talk about.</p>
+            <div class="chat-welcome-panel__actions">
+                <a href="{% url 'explore' %}" class="button button--primary">Explore Items <span aria-hidden="true">↗</span></a>
+                <a href="{% url 'board' %}" class="button button--quiet">Browse Requests</a>
+            </div>
+        </section>
+    </div>
 </section>
 {% endblock %}

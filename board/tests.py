@@ -61,6 +61,30 @@ class BoardMessagingTests(TestCase):
             1,
         )
 
+    def test_board_response_notification_has_message_and_request_actions(self):
+        self.client.force_login(self.responder)
+        self.client.get(self.start_url())
+        conversation = Conversation.objects.get(board_request=self.board_request)
+        notification = Notification.objects.get(
+            recipient=self.requester,
+            notification_type='board_response',
+        )
+
+        self.client.force_login(self.requester)
+        page = self.client.get(reverse('notifications'))
+        self.assertContains(page, 'Message')
+        self.assertContains(page, 'View Request')
+
+        response = self.client.get(
+            f"{reverse('open_notification', args=[notification.pk])}?action=message"
+        )
+        self.assertRedirects(
+            response,
+            reverse('conversation', args=[conversation.pk]),
+        )
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+
     def test_only_conversation_participants_can_view_messages_or_email(self):
         self.client.force_login(self.responder)
         self.client.get(self.start_url())
@@ -101,6 +125,20 @@ class BoardMessagingTests(TestCase):
                 notification_type='request_fulfilled',
             ).exists()
         )
+        notification = Notification.objects.get(
+            recipient=self.responder,
+            notification_type='request_fulfilled',
+        )
+        self.client.force_login(self.responder)
+        response = self.client.get(
+            f"{reverse('open_notification', args=[notification.pk])}?action=details"
+        )
+        self.assertRedirects(
+            response,
+            f"{reverse('board')}?fulfilled=1#board-request-{self.board_request.pk}",
+        )
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
 
     def test_login_is_required_to_respond_and_owner_cannot_respond_to_own_post(self):
         response = self.client.get(self.start_url())

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from django.test import RequestFactory
 from django.urls import reverse
@@ -66,7 +67,7 @@ class MessagingFlowTests(TestCase):
         self.client.force_login(self.owner)
         inbox = self.client.get(reverse('inbox'))
         self.assertContains(inbox, 'class="nav-unread">1</span>', count=2)
-        self.assertContains(inbox, 'class="unread-badge">1</span>')
+        self.assertContains(inbox, 'aria-label="1 unread messages">1</span>')
         self.assertContains(inbox, 'Is the calculator still available?')
         counts = unread_messages(self._request_for(self.owner))
         self.assertEqual(counts['unread_message_count'], 1)
@@ -218,3 +219,36 @@ class NotificationAccessTests(TestCase):
         response = self.client.get(reverse('notifications'))
 
         self.assertContains(response, 'Owner private notification')
+
+    def test_nav_notification_preview_is_private_and_message_can_be_opened(self):
+        conversation = Conversation.objects.create()
+        conversation.participants.add(self.owner, self.other_user)
+        notification = Notification.objects.create(
+            recipient=self.owner,
+            actor=self.other_user,
+            notification_type='message',
+            message='A private reply',
+            target_url=reverse('conversation', args=[conversation.pk]),
+            content_type=ContentType.objects.get_for_model(conversation),
+            object_id=conversation.pk,
+            dedupe_key='private-reply',
+        )
+        self.client.force_login(self.owner)
+
+        home = self.client.get(reverse('home'))
+        self.assertContains(home, 'A private reply')
+        self.assertContains(home, reverse('open_notification', args=[notification.pk]))
+
+        self.client.force_login(self.other_user)
+        other_home = self.client.get(reverse('home'))
+        self.assertNotContains(other_home, 'A private reply')
+
+        self.client.force_login(self.owner)
+        centre = self.client.get(reverse('notifications'))
+        self.assertContains(centre, 'Reply')
+        response = self.client.get(
+            f"{reverse('open_notification', args=[notification.pk])}?action=message"
+        )
+        self.assertRedirects(response, reverse('conversation', args=[conversation.pk]))
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)

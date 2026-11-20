@@ -4,13 +4,13 @@
 {% block content %}
 <section class="home-hero">
     <div class="home-hero__copy">
-        <span class="home-kicker"><span class="home-kicker__line"></span> THE CAMPUS CIRCULAR</span>
-        <p class="home-hero__edition">A marketplace made for student life <span>·</span> No. 01</p>
+        <span class="home-kicker"><span class="home-kicker__line"></span> REUSE CAMPUS / THE CIRCULAR</span>
+        <p class="home-hero__edition">A marketplace made for student life <span>·</span> Community edition</p>
 
-        <h1>Good things<br>find <em>new stories.</em></h1>
+        <h1>Give. Take.<br><em>Reuse.</em></h1>
         <p class="home-hero__description">
-            Your next semester essential might already be on campus.
-            Discover pre-loved finds, pass things on, and make student life a little lighter.
+            A greener campus, together. Find student essentials, pass useful things along,
+            and keep good items in circulation.
         </p>
 
         <form class="home-search" method="GET" action="{% url 'explore' %}">
@@ -20,8 +20,13 @@
         </form>
 
         <div class="home-hero__links">
-            <a href="{% url 'explore' %}" class="home-link-primary">Explore the marketplace <span aria-hidden="true">↗</span></a>
-            <a href="{% url 'post_item' %}" class="home-link-secondary">Have something to pass on?</a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'explore' %}" class="home-link-primary">Explore Items <span aria-hidden="true">↗</span></a>
+                <a href="{% url 'board' %}" class="home-link-secondary">Browse Requests</a>
+            {% else %}
+                <a href="{% url 'register' %}" class="home-link-primary">Join Community <span aria-hidden="true">↗</span></a>
+                <a href="{% url 'login' %}" class="home-link-secondary">Login</a>
+            {% endif %}
         </div>
 
         <div class="home-hero__footnote">
@@ -36,32 +41,32 @@
         <div class="home-art__caption home-art__caption--top">GOOD FINDS<br>LIVE ON</div>
         <svg class="home-art__still-life" viewBox="0 0 560 500" role="img" aria-labelledby="stillLifeTitle" xmlns="http://www.w3.org/2000/svg">
             <title id="stillLifeTitle">A still life of reusable student essentials</title>
-            <ellipse cx="285" cy="430" rx="218" ry="25" fill="#30251F" opacity=".10"/>
-            <path d="M94 375h372l-25 46H117z" fill="#C7654A"/>
-            <path d="M117 375h325l-10 16H127z" fill="#E58C70"/>
+            <ellipse cx="285" cy="430" rx="218" ry="25" fill="#02040a" opacity=".48"/>
+            <path d="M94 375h372l-25 46H117z" fill="#6d58bb"/>
+            <path d="M117 375h325l-10 16H127z" fill="#9a83ee"/>
             <g transform="translate(112 155) rotate(-8 100 110)">
-                <rect x="0" y="0" width="176" height="226" rx="8" fill="#E8B7A7"/>
-                <rect x="13" y="12" width="150" height="202" rx="3" fill="#FAF4E9"/>
-                <path d="M34 42h103M34 55h82" stroke="#C7654A" stroke-width="4" stroke-linecap="round"/>
-                <path d="M34 89h98M34 101h108M34 113h84M34 125h102" stroke="#D8C8B8" stroke-width="3" stroke-linecap="round"/>
-                <path d="M34 166h72" stroke="#C7654A" stroke-width="5" stroke-linecap="round"/>
-                <path d="M0 0h15v226H0z" fill="#C7654A"/>
+                <rect x="0" y="0" width="176" height="226" rx="8" fill="#687c9d"/>
+                <rect x="13" y="12" width="150" height="202" rx="3" fill="#d9e3f3"/>
+                <path d="M34 42h103M34 55h82" stroke="#7660c8" stroke-width="4" stroke-linecap="round"/>
+                <path d="M34 89h98M34 101h108M34 113h84M34 125h102" stroke="#aab8cf" stroke-width="3" stroke-linecap="round"/>
+                <path d="M34 166h72" stroke="#7660c8" stroke-width="5" stroke-linecap="round"/>
+                <path d="M0 0h15v226H0z" fill="#7660c8"/>
             </g>
             <g transform="translate(286 222) rotate(5 95 75)">
-                <rect x="0" y="0" width="190" height="135" rx="12" fill="#30251F"/>
-                <rect x="8" y="8" width="174" height="119" rx="6" fill="#DCE5DD"/>
-                <path d="M21 26h65v5H21zM21 40h105v4H21zM21 54h82v4H21z" fill="#8C9B8C"/>
-                <circle cx="145" cy="83" r="22" fill="#F2D47A"/>
-                <path d="M-15 137h220l-18 17H3z" fill="#A94E38"/>
-                <path d="M67 139h65l-7 7H74z" fill="#F2D47A"/>
+                <rect x="0" y="0" width="190" height="135" rx="12" fill="#1c2638"/>
+                <rect x="8" y="8" width="174" height="119" rx="6" fill="#b9c9e2"/>
+                <path d="M21 26h65v5H21zM21 40h105v4H21zM21 54h82v4H21z" fill="#7386a6"/>
+                <circle cx="145" cy="83" r="22" fill="#91aaf5"/>
+                <path d="M-15 137h220l-18 17H3z" fill="#566b89"/>
+                <path d="M67 139h65l-7 7H74z" fill="#91aaf5"/>
             </g>
             <g transform="translate(370 62)">
-                <path d="M48 137C18 100 9 64 27 32c25 17 35 50 21 82C58 71 83 39 119 31c8 37-15 77-63 99 39-12 70-7 93 18-30 24-72 23-101-4" fill="#788B72"/>
-                <path d="M67 133C66 92 76 57 104 26" fill="none" stroke="#536B50" stroke-width="4" stroke-linecap="round"/>
-                <path d="M37 126h86l-10 87H47z" fill="#F2D47A"/>
-                <path d="M34 126h92v16H34z" fill="#D5A94C"/>
+                <path d="M48 137C18 100 9 64 27 32c25 17 35 50 21 82C58 71 83 39 119 31c8 37-15 77-63 99 39-12 70-7 93 18-30 24-72 23-101-4" fill="#5caa91"/>
+                <path d="M67 133C66 92 76 57 104 26" fill="none" stroke="#317a69" stroke-width="4" stroke-linecap="round"/>
+                <path d="M37 126h86l-10 87H47z" fill="#7787a7"/>
+                <path d="M34 126h92v16H34z" fill="#91aaf5"/>
             </g>
-            <g fill="#30251F" opacity=".8"><circle cx="90" cy="105" r="4"/><circle cx="470" cy="250" r="4"/><circle cx="270" cy="90" r="3"/></g>
+            <g fill="#d8e2f4" opacity=".8"><circle cx="90" cy="105" r="4"/><circle cx="470" cy="250" r="4"/><circle cx="270" cy="90" r="3"/></g>
         </svg>
         <div class="home-art__sticker"><span>PASS IT</span><strong>ON.</strong><i>↗</i></div>
         <div class="home-art__caption home-art__caption--bottom">PRE-LOVED<br>PRE-READY.</div>
@@ -179,22 +184,4 @@
     </div>
 </section>
 
-<section class="home-cta home-section-wrap">
-    <div class="home-cta__topline"><span>THE CAMPUS CIRCULAR</span><span>GOOD THINGS, IN GOOD COMPANY.</span></div>
-    <div class="home-cta__main">
-        <div><span class="home-section-index">05 / YOUR TURN</span><h2>Make room for<br><em>another story.</em></h2></div>
-        <div class="home-cta__action">
-            {% if request.user.is_authenticated %}
-                <p>Find something useful or help another student find what they need.</p>
-                <a href="{% url 'explore' %}" class="home-cta__button">Explore Items <span aria-hidden="true">↗</span></a>
-                <a href="{% url 'board' %}" class="home-cta__button">Browse Requests <span aria-hidden="true">↗</span></a>
-            {% else %}
-                <p>Got something gathering dust? Someone else might need it next week.</p>
-                <a href="{% url 'register' %}" class="home-cta__button">Join Community <span aria-hidden="true">↗</span></a>
-                <a href="{% url 'login' %}" class="home-cta__button">Login <span aria-hidden="true">↗</span></a>
-            {% endif %}
-        </div>
-    </div>
-    <span class="home-cta__asterisk" aria-hidden="true">✳</span>
-</section>
 {% endblock %}

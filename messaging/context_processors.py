@@ -8,6 +8,7 @@ def unread_messages(request):
         return {
             'unread_message_count': 0,
             'unread_notification_count': 0,
+            'notification_preview': (),
         }
 
     unread_message_count = Message.objects.filter(
@@ -18,7 +19,13 @@ def unread_messages(request):
         recipient=user,
         is_read=False,
     ).count()
+    notification_preview = Notification.objects.filter(
+        recipient=user,
+    ).only(
+        'pk', 'message', 'created_at', 'is_read',
+    )[:4]
     return {
         'unread_message_count': unread_message_count,
         'unread_notification_count': unread_notification_count,
+        'notification_preview': notification_preview,
     }

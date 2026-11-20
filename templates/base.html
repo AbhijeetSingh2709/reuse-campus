@@ -5,21 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Buy, sell and rent essentials with students around your campus.">
-    <meta name="theme-color" content="#FAF4E9">
+    <meta name="theme-color" content="#0b1018">
 
     <title>{% block title %}ReUse Campus{% endblock %}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=7">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-<header>
+<header class="site-header">
     <nav class="site-nav" aria-label="Main navigation">
-        <a class="nav-brand" href="{% url 'home' %}" aria-label="ReUse Campus home">ReUse Campus<span>.</span></a>
+        <a class="nav-brand" href="{% url 'home' %}" aria-label="ReUse Campus home">
+            <span class="nav-brand__mark" aria-hidden="true">R</span>
+            <span>ReUse <strong>Campus</strong><i>.</i></span>
+        </a>
 
         <button class="nav-toggle" type="button"
                 aria-label="Open navigation menu"
@@ -29,23 +32,50 @@
         </button>
 
         <div class="nav-links" id="primary-navigation">
-            <a class="nav-link" href="{% url 'explore' %}">Explore</a>
-            <a class="nav-link" href="{% url 'board' %}">Request Board</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'explore' or request.resolver_match.url_name == 'item_detail' or request.resolver_match.url_name == 'request_to_buy' or request.resolver_match.url_name == 'request_to_rent' %}is-active{% endif %}" href="{% url 'explore' %}">Explore Items</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'board' or request.resolver_match.url_name == 'post_board_request' %}is-active{% endif %}" href="{% url 'board' %}">Request Board</a>
 
             {% if request.user.is_authenticated %}
-                <a class="nav-cta" href="{% url 'post_item' %}">＋ Sell Something</a>
-                <a class="nav-link" href="{% url 'inbox' %}">Messages{% if unread_message_count %}<span class="nav-unread">{% if unread_message_count > 99 %}99+{% else %}{{ unread_message_count }}{% endif %}</span>{% endif %}</a>
-                <a class="nav-link" href="{% url 'notifications' %}" aria-label="Notifications">
-                    <span aria-hidden="true">&#128276;</span> Notifications
-                    {% if unread_notification_count %}<span class="nav-unread">{% if unread_notification_count > 99 %}99+{% else %}{{ unread_notification_count }}{% endif %}</span>{% endif %}
+                <a class="nav-cta {% if request.resolver_match.url_name == 'post_item' or request.resolver_match.url_name == 'edit_item' %}is-active{% endif %}" href="{% url 'post_item' %}"><span aria-hidden="true">＋</span> List an item</a>
+                <a class="nav-link nav-messages {% if request.resolver_match.url_name == 'inbox' or request.resolver_match.url_name == 'conversation' %}is-active{% endif %}" href="{% url 'inbox' %}">
+                    Messages{% if unread_message_count %}<span class="nav-unread">{% if unread_message_count > 99 %}99+{% else %}{{ unread_message_count }}{% endif %}</span>{% endif %}
                 </a>
-                <a class="nav-link" href="{% url 'dashboard' %}">
-                    {{ request.user.first_name|default:request.user.username }}
+                <details class="notification-menu">
+                    <summary class="nav-link notification-trigger" aria-label="Notifications{% if unread_notification_count %}, {{ unread_notification_count }} unread{% endif %}">
+                        <svg class="notification-bell" aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 21h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                        </svg>
+                        <span class="notification-trigger__label">Alerts</span>
+                        {% if unread_notification_count %}<span class="nav-unread">{% if unread_notification_count > 99 %}99+{% else %}{{ unread_notification_count }}{% endif %}</span>{% endif %}
+                    </summary>
+                    <div class="notification-popover">
+                        <div class="notification-popover__heading">
+                            <strong>Recent activity</strong>
+                            <span>{% if unread_notification_count %}{{ unread_notification_count }} unread{% else %}You're all caught up{% endif %}</span>
+                        </div>
+                        {% for notification in notification_preview %}
+                            <a class="notification-preview {% if not notification.is_read %}is-unread{% endif %}" href="{% url 'open_notification' notification.pk %}">
+                                <span class="notification-preview__dot" aria-hidden="true"></span>
+                                <span class="notification-preview__copy">
+                                    <span>{{ notification.message|truncatechars:88 }}</span>
+                                    <time>{{ notification.created_at|timesince }} ago</time>
+                                </span>
+                            </a>
+                        {% empty %}
+                            <p class="notification-preview-empty">New messages and requests will appear here.</p>
+                        {% endfor %}
+                        <a class="notification-popover__all" href="{% url 'notifications' %}">Open Action Centre <span aria-hidden="true">↗</span></a>
+                    </div>
+                </details>
+                <a class="nav-profile {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'profile' or request.resolver_match.url_name == 'edit_profile' or request.resolver_match.url_name == 'my_items' %}is-active{% endif %}" href="{% url 'dashboard' %}" aria-label="Dashboard for {{ request.user.first_name|default:request.user.username }}">
+                    <span class="nav-avatar" aria-hidden="true">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span>
+                    <span class="nav-profile__name">{{ request.user.first_name|default:request.user.username }}</span>
                 </a>
-                <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                <a class="nav-link nav-logout" href="{% url 'logout' %}">Log out</a>
             {% else %}
-                <a class="nav-link" href="{% url 'login' %}">Login</a>
-                <a class="nav-cta" href="{% url 'register' %}">Get Started <span aria-hidden="true">↗</span></a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}" href="{% url 'login' %}">Log in</a>
+                <a class="nav-cta" href="{% url 'register' %}">Join community <span aria-hidden="true">↗</span></a>
             {% endif %}
         </div>
     </nav>
@@ -64,16 +94,19 @@
 </main>
 
 <footer>
-    <p>ReUse Campus<span>.</span></p>
+    <div class="footer-brand">
+        <a href="{% url 'home' %}">ReUse Campus<span>.</span></a>
+        <small>A greener campus, together.</small>
+    </div>
     <nav aria-label="Footer navigation">
         <a href="{% url 'home' %}">Home</a>
-        <a href="{% url 'explore' %}">Explore</a>
+        <a href="{% url 'explore' %}">Explore Items</a>
         <a href="{% url 'board' %}">Request Board</a>
     </nav>
-    <small>© 2026 ReUse Campus. Made for students.</small>
+    <small>© 2026 ReUse Campus · Made for students.</small>
 </footer>
 
-<script src="{% static 'js/main.js' %}?v=3"></script>
+<script src="{% static 'js/main.js' %}?v=4"></script>
 <script>
     // Small progressive-enhancement fallback for the responsive navigation.
     document.addEventListener("DOMContentLoaded", function () {
