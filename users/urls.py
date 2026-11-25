@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path('register/', views.register_view, name='register'),
+    path('verify-email/<uidb64>/<token>/', views.verify_email_view, name='verify_email'),
+    path('resend-verification/', views.resend_verification_view, name='resend_verification'),
     path('login/', views.login_view, name='login'),
     path('password-reset/', views.CampusPasswordResetView.as_view(), name='password_reset'),
     path(

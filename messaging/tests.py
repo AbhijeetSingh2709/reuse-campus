@@ -252,3 +252,34 @@ class NotificationAccessTests(TestCase):
         self.assertRedirects(response, reverse('conversation', args=[conversation.pk]))
         notification.refresh_from_db()
         self.assertTrue(notification.is_read)
+
+    def test_unread_counts_json_endpoint_and_deduplication(self):
+        from .services import create_notification
+
+        create_notification(
+            recipient=self.owner,
+            notification_type='message',
+            message='Deduped alert',
+            target_url=reverse('inbox'),
+            dedupe_key='dup-key-1',
+        )
+        create_notification(
+            recipient=self.owner,
+            notification_type='message',
+            message='Deduped alert',
+            target_url=reverse('inbox'),
+            dedupe_key='dup-key-1',
+        )
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.owner, dedupe_key='dup-key-1').count(),
+            1,
+        )
+
+        # Unauthenticated request redirects to login
+        anon_resp = self.client.get(reverse('unread_counts_json'))
+        self.assertEqual(anon_resp.status_code, 302)
+
+        self.client.force_login(self.owner)
+        resp = self.client.get(reverse('unread_counts_json'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {'unread_messages': 0, 'unread_notifications': 2})

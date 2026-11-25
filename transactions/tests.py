@@ -427,3 +427,137 @@ class ActionableNotificationTests(TestCase):
                 participants=self.owner,
             ).filter(participants=self.requester).exists()
         )
+
+
+@override_settings(
+    STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage',
+    RAZORPAY_KEY_ID='',
+    RAZORPAY_KEY_SECRET='',
+)
+class ReRequestAndDepositTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username='owner2', password='password')
+        self.requester = User.objects.create_user(username='renter2', password='password')
+        self.other = User.objects.create_user(username='other2', password='password')
+        self.sell_item = Item.objects.create(
+            owner=self.owner,
+            title='Graphing Calc',
+            description='TI-84',
+            category='calculators',
+            listing_type='sell',
+            price=1200,
+        )
+        self.rent_item = Item.objects.create(
+            owner=self.owner,
+            title='DSLR Camera',
+            description='For fest coverage',
+            category='electronics',
+            listing_type='rent',
+            rent_per_day=300,
+            security_deposit=1000,
+        )
+
+    def test_user_can_rerequest_after_rejection_but_not_while_pending(self):
+        self.client.force_login(self.requester)
+        self.client.post(reverse('request_to_buy', args=[self.sell_item.pk]), {'message': 'First try'})
+        first_req = BuyRequest.objects.get(item=self.sell_item, requester=self.requester)
+
+        # Duplicate while pending is blocked
+        self.client.post(reverse('request_to_buy', args=[self.sell_item.pk]), {'message': 'Dup'})
+        self.assertEqual(BuyRequest.objects.filter(item=self.sell_item, requester=self.requester).count(), 1)
+
+        # Reject first request
+        self.client.force_login(self.owner)
+        self.client.post(reverse('reject_buy_request', args=[first_req.pk]))
+
+        # Same user can re-request after rejection
+        self.client.force_login(self.requester)
+        resp = self.client.post(reverse('request_to_buy', args=[self.sell_item.pk]), {'message': 'Second try'})
+        self.assertRedirects(resp, reverse('item_detail', args=[self.sell_item.pk]))
+        self.assertEqual(BuyRequest.objects.filter(item=self.sell_item, requester=self.requester).count(), 2)
+
+    def test_rental_deposit_escrow_hold_and_auto_release_on_return(self):
+        start = datetime.date.today() + datetime.timedelta(days=1)
+        end = start + datetime.timedelta(days=3)
+
+        self.client.force_login(self.requester)
+        self.client.post(reverse('request_to_rent', args=[self.rent_item.pk]), {
+            'start_date': start.isoformat(),
+            'end_date': end.isoformat(),
+            'message': 'Need for weekend',
+        })
+        rent_req = RentRequest.objects.get(item=self.rent_item, requester=self.requester)
+        self.assertEqual(rent_req.deposit_amount, 1000)
+        self.assertEqual(rent_req.deposit_status, 'not_required')
+
+        self.client.force_login(self.owner)
+        self.client.post(reverse('approve_rent_request', args=[rent_req.pk]))
+        rent_req.refresh_from_db()
+        self.assertEqual(rent_req.status, 'approved')
+        self.assertEqual(rent_req.deposit_status, 'pending')
+
+        # Other user cannot pay deposit
+        self.client.force_login(self.other)
+        self.client.post(reverse('pay_rent_deposit', args=[rent_req.pk]))
+        rent_req.refresh_from_db()
+        self.assertEqual(rent_req.deposit_status, 'pending')
+
+        # Requester holds deposit in escrow
+        self.client.force_login(self.requester)
+        pay_page = self.client.get(reverse('pay_rent_deposit', args=[rent_req.pk]))
+        self.assertContains(pay_page, '1000')
+        pay_resp = self.client.post(reverse('pay_rent_deposit', args=[rent_req.pk]))
+        self.assertRedirects(pay_resp, reverse('dashboard'))
+        rent_req.refresh_from_db()
+        self.assertEqual(rent_req.deposit_status, 'held')
+        self.assertTrue(rent_req.payment_reference.startswith('ESCROW-'))
+        self.assertIsNotNone(rent_req.deposit_paid_at)
+
+        # Owner marks returned -> deposit auto-released
+        self.client.force_login(self.owner)
+        ret_resp = self.client.post(reverse('mark_returned', args=[rent_req.pk]))
+        self.assertRedirects(ret_resp, reverse('dashboard'))
+        rent_req.refresh_from_db()
+        self.rent_item.refresh_from_db()
+        self.assertEqual(rent_req.status, 'returned')
+        self.assertEqual(rent_req.deposit_status, 'released')
+        self.assertIsNotNone(rent_req.deposit_released_at)
+        self.assertEqual(self.rent_item.status, 'available')
+
+    @override_settings(RAZORPAY_KEY_ID='rzp_test_123', RAZORPAY_KEY_SECRET='secret_xyz')
+    def test_razorpay_signature_verification(self):
+        import hashlib
+        import hmac
+
+        start = datetime.date.today() + datetime.timedelta(days=1)
+        rent_req = RentRequest.objects.create(
+            item=self.rent_item,
+            requester=self.requester,
+            start_date=start,
+            end_date=start + datetime.timedelta(days=2),
+            status='approved',
+            deposit_amount=1000,
+            deposit_status='pending',
+        )
+        self.client.force_login(self.requester)
+        bad_resp = self.client.post(reverse('pay_rent_deposit', args=[rent_req.pk]), {
+            'razorpay_payment_id': 'pay_123',
+            'razorpay_order_id': 'order_123',
+            'razorpay_signature': 'bad_sig',
+        })
+        self.assertRedirects(bad_resp, reverse('pay_rent_deposit', args=[rent_req.pk]))
+        rent_req.refresh_from_db()
+        self.assertEqual(rent_req.deposit_status, 'pending')
+
+        valid_sig = hmac.new(
+            b'secret_xyz', b'order_123|pay_123', hashlib.sha256
+        ).hexdigest()
+        good_resp = self.client.post(reverse('pay_rent_deposit', args=[rent_req.pk]), {
+            'razorpay_payment_id': 'pay_123',
+            'razorpay_order_id': 'order_123',
+            'razorpay_signature': valid_sig,
+        })
+        self.assertRedirects(good_resp, reverse('dashboard'))
+        rent_req.refresh_from_db()
+        self.assertEqual(rent_req.deposit_status, 'held')
+        self.assertEqual(rent_req.payment_reference, 'pay_123')

@@ -1,4 +1,4 @@
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages as django_messages
@@ -362,3 +362,20 @@ def mark_all_notifications_read(request):
         is_read=False,
     ).update(is_read=True)
     return redirect('notifications')
+
+
+@login_required
+def unread_counts_json(request):
+    from messaging.models import Message, Notification
+    unread_messages = Message.objects.filter(
+        conversation__participants=request.user,
+        is_read=False,
+    ).exclude(sender=request.user).count()
+    unread_notifications = Notification.objects.filter(
+        recipient=request.user,
+        is_read=False,
+    ).count()
+    return JsonResponse({
+        'unread_messages': unread_messages,
+        'unread_notifications': unread_notifications,
+    })

@@ -51,35 +51,4 @@ document.addEventListener('DOMContentLoaded', function () {
             if (status) status.textContent = button.textContent + ' Please wait.';
         });
     });
-
-    const priceForm = document.querySelector('.marketplace-filters');
-    const priceCards = Array.from(document.querySelectorAll('.marketplace-card[data-market-price]'));
-    const priceEmptyState = document.getElementById('marketplace-price-empty');
-    if (!priceForm || !priceCards.length || !priceEmptyState) return;
-
-    const minPriceInput = priceForm.querySelector('[name="min_price"]');
-    const maxPriceInput = priceForm.querySelector('[name="max_price"]');
-    const countBadge = document.getElementById('marketplace-count');
-    const countText = document.getElementById('marketplace-results-count');
-
-    function applyPriceRange() {
-        const minValue = Number(minPriceInput.value);
-        const maxValue = Number(maxPriceInput.value);
-        const minPrice = minPriceInput.value === '' ? -Infinity : minValue;
-        const maxPrice = maxPriceInput.value === '' ? Infinity : maxValue;
-        let visibleCount = 0;
-
-        priceCards.forEach(function (card) {
-            const price = Number(card.dataset.marketPrice);
-            const matches = price >= minPrice && price <= maxPrice;
-            card.hidden = !matches;
-            if (matches) visibleCount += 1;
-        });
-
-        priceEmptyState.hidden = visibleCount > 0;
-        if (countBadge) countBadge.textContent = String(visibleCount);
-        if (countText) countText.textContent = visibleCount + (visibleCount === 1 ? ' listing found' : ' listings found');
-    }
-
-    applyPriceRange();
 });

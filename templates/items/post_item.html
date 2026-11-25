@@ -50,6 +50,12 @@
                 </div>
             </div>
 
+            <div class="form-field">
+                <label for="{{ form.condition.id_for_label }}">Item condition</label>
+                {{ form.condition }}
+                {% if form.condition.errors %}<p class="field-error">{{ form.condition.errors }}</p>{% endif %}
+            </div>
+
             <div class="form-field" id="price-field">
                 <label for="{{ form.price.id_for_label }}">Sale price (₹)</label>
                 {{ form.price }}
@@ -57,11 +63,20 @@
                 {% if form.price.errors %}<p class="field-error">{{ form.price.errors }}</p>{% endif %}
             </div>
 
-            <div class="form-field" id="rent-price-field">
-                <label for="{{ form.rent_per_day.id_for_label }}">Rent per day (₹)</label>
-                {{ form.rent_per_day }}
-                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
-                {% if form.rent_per_day.errors %}<p class="field-error">{{ form.rent_per_day.errors }}</p>{% endif %}
+            <div id="rent-price-field" class="editorial-form" style="gap:17px;">
+                <div class="form-field">
+                    <label for="{{ form.rent_per_day.id_for_label }}">Rent per day (₹)</label>
+                    {{ form.rent_per_day }}
+                    <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
+                    {% if form.rent_per_day.errors %}<p class="field-error">{{ form.rent_per_day.errors }}</p>{% endif %}
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.security_deposit.id_for_label }}">Refundable security deposit (₹) <span>(optional)</span></label>
+                    {{ form.security_deposit }}
+                    <small class="field-hint">Held in escrow once a rent request is approved, and released automatically when returned.</small>
+                    {% if form.security_deposit.errors %}<p class="field-error">{{ form.security_deposit.errors }}</p>{% endif %}
+                </div>
             </div>
 
             <div class="form-field photo-field">
@@ -73,6 +88,19 @@
                     <img id="photo-preview-img" alt="Preview of the selected photo">
                     <span>Photo preview — saved when you publish</span>
                 </div>
+            </div>
+
+            <div class="form-field">
+                <label>Additional photos <span>(optional, up to 5)</span></label>
+                <small class="field-hint">Upload extra photos to show different angles or condition.</small>
+                {{ image_formset.management_form }}
+                {% for img_form in image_formset %}
+                    <div style="margin-top:8px;padding:10px;border:1px dashed var(--line);border-radius:8px;">
+                        {{ img_form.id }}
+                        {{ img_form.image }}
+                        {% if img_form.image.errors %}<p class="field-error">{{ img_form.image.errors }}</p>{% endif %}
+                    </div>
+                {% endfor %}
             </div>
 
             <div class="form-actions">

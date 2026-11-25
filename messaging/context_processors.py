@@ -21,9 +21,10 @@ def unread_messages(request):
     ).count()
     notification_preview = Notification.objects.filter(
         recipient=user,
+        is_read=False,
     ).only(
         'pk', 'message', 'created_at', 'is_read',
-    )[:4]
+    )[:5]
     return {
         'unread_message_count': unread_message_count,
         'unread_notification_count': unread_notification_count,

@@ -9,5 +9,6 @@ urlpatterns = [
     path('buy-request/<int:req_id>/reject/', views.reject_buy_request, name='reject_buy_request'),
     path('rent-request/<int:req_id>/approve/', views.approve_rent_request, name='approve_rent_request'),
     path('rent-request/<int:req_id>/reject/', views.reject_rent_request, name='reject_rent_request'),
+    path('rent-request/<int:req_id>/pay-deposit/', views.pay_rent_deposit, name='pay_rent_deposit'),
     path('rent-request/<int:req_id>/returned/', views.mark_returned, name='mark_returned'),
 ]

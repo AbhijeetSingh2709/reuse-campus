@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Saved Items — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading heading-with-action">
+        <div>
+            <span class="eyebrow">YOUR SAVED ITEMS</span>
+            <h1>Your <em>wishlist.</em></h1>
+            <p>Items you've saved for later. Act fast — they go quickly.</p>
+        </div>
+        <a href="{% url 'explore' %}" class="editorial-cancel">Browse more ↗</a>
+    </div>
+
+    {% if saved_items %}
+        <div class="home-product-grid" style="margin-top:24px;">
+            {% for item in saved_items %}
+                <div style="position:relative;display:flex;min-width:0;">
+                    <a href="{% url 'item_detail' item.pk %}" class="home-product-card" style="width:100%;">
+                        <div class="home-product-card__image">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}" loading="lazy">
+                            {% else %}
+                                <div class="home-product-card__placeholder" aria-label="No photo available"><span aria-hidden="true">RC</span></div>
+                            {% endif %}
+                            <span class="home-product-card__availability"><i aria-hidden="true"></i>{{ item.get_status_display }}</span>
+                        </div>
+                        <div class="home-product-card__meta"><span>{{ item.get_category_display }}</span><span>{{ item.get_listing_type_display }}</span></div>
+                        <h3>{{ item.title }}</h3>
+                        <div class="home-product-card__bottom">
+                            <strong>{{ item.get_display_price }}</strong>
+                            <span>View item <span aria-hidden="true">↗</span></span>
+                        </div>
+                    </a>
+                    <form method="POST" action="{% url 'toggle_wishlist' item.pk %}" style="position:absolute;top:10px;right:10px;z-index:2;margin:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{% url 'wishlist' %}">
+                        <button type="submit" aria-label="Remove from wishlist" title="Remove from wishlist" style="width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:rgba(255,255,255,0.94);color:var(--blue);display:grid;place-items:center;cursor:pointer;font-size:14px;padding:0;">♥</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="editorial-empty" style="margin-top:24px;">
+            <h2>Nothing saved yet.</h2>
+            <p>Browse listings and tap ♡ to save items here.</p>
+            <a href="{% url 'explore' %}" class="editorial-button" style="margin-top:12px;">Browse listings ↗</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

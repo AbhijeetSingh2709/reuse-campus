@@ -64,3 +64,61 @@ class PasswordResetFlowTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertContains(response, 'EMAIL_HOST_PASSWORD', status_code=503)
         self.assertEqual(len(mail.outbox), 0)
+
+
+@override_settings(
+    STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage',
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    ALLOWED_EMAIL_DOMAINS=['*'],
+    REQUIRE_EMAIL_VERIFICATION=False,
+)
+class EmailRegistrationTests(TestCase):
+    def _payload(self, username, email):
+        return {
+            'username': username,
+            'first_name': 'Asha',
+            'last_name': 'Rao',
+            'email': email,
+            'password1': 'CampusPass!9876',
+            'password2': 'CampusPass!9876',
+        }
+
+    def test_any_valid_email_can_register_and_duplicates_are_blocked(self):
+        gmail_resp = self.client.post(reverse('register'), self._payload('asha1', 'asha@gmail.com'))
+        self.assertRedirects(gmail_resp, reverse('home'))
+        self.assertTrue(User.objects.filter(username='asha1', email='asha@gmail.com', is_active=True).exists())
+
+        self.client.logout()
+        edu_resp = self.client.post(reverse('register'), self._payload('asha2', 'asha@iitb.ac.in'))
+        self.assertRedirects(edu_resp, reverse('home'))
+        self.assertTrue(User.objects.filter(username='asha2', email='asha@iitb.ac.in').exists())
+
+        self.client.logout()
+        dup = self.client.post(reverse('register'), self._payload('asha3', 'ASHA@gmail.com'))
+        self.assertEqual(dup.status_code, 200)
+        self.assertContains(dup, 'An account with this email already exists.')
+
+    @override_settings(REQUIRE_EMAIL_VERIFICATION=True)
+    def test_email_verification_activates_any_valid_email_account(self):
+        resp = self.client.post(reverse('register'), self._payload('asha_verify', 'asha.verify@gmail.com'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'asha.verify@gmail.com')
+        user = User.objects.get(username='asha_verify')
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_email_verified)
+        self.assertEqual(len(mail.outbox), 1)
+
+        match = re.search(r'http://testserver(/verify-email/[^/\s]+/[^/\s]+/)', mail.outbox[0].body)
+        self.assertIsNotNone(match)
+        verify_resp = self.client.get(match.group(1))
+        self.assertRedirects(verify_resp, reverse('home'))
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(user.is_email_verified)
+
+    @override_settings(ALLOWED_EMAIL_DOMAINS=['.edu', '.ac.in'])
+    def test_optional_domain_restriction_still_works_when_configured(self):
+        bad = self.client.post(reverse('register'), self._payload('asha_bad', 'asha@gmail.com'))
+        self.assertEqual(bad.status_code, 200)
+        self.assertContains(bad, 'Please use an allowed email domain')
+        self.assertFalse(User.objects.filter(username='asha_bad').exists())

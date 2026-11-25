@@ -172,7 +172,7 @@
         {% if active_rentals_out %}
             <div class="request-card-grid">
                 {% for rental in active_rentals_out %}
-                    <article class="dashboard-request-card">
+                    <article id="active-rental-{{ rental.pk }}" class="dashboard-request-card">
                         <span class="request-type">ACTIVE RENTAL</span>
                         <h3>{{ rental.item.title }}</h3>
                         <p>Rented by {{ rental.requester.get_full_name|default:rental.requester.username }}</p>
@@ -180,6 +180,11 @@
                         <div class="request-details">
                             <span>From {{ rental.start_date|date:"d M Y" }}</span>
                             <span>Until {{ rental.end_date|date:"d M Y" }}</span>
+                            {% if rental.deposit_amount > 0 %}
+                                <span class="status-label status-{% if rental.deposit_status == 'held' %}approved{% elif rental.deposit_status == 'pending' %}pending{% else %}available{% endif %}">
+                                    {{ rental.get_deposit_status_display }} (₹{{ rental.deposit_amount|floatformat:0 }})
+                                </span>
+                            {% endif %}
                         </div>
 
                         <div class="request-details">
@@ -270,6 +275,18 @@
                         <span class="status-label status-{{ rent_request.status }}">
                             {{ rent_request.status|title }}
                         </span>
+
+                        {% if rent_request.deposit_amount > 0 %}
+                            <span class="status-label status-{% if rent_request.deposit_status == 'pending' %}pending{% else %}approved{% endif %}">
+                                {{ rent_request.get_deposit_status_display }} · ₹{{ rent_request.deposit_amount|floatformat:0 }}
+                            </span>
+                        {% endif %}
+
+                        {% if rent_request.status == 'approved' and rent_request.deposit_status == 'pending' %}
+                            <a href="{% url 'pay_rent_deposit' rent_request.pk %}" class="editorial-button small-button">
+                                Pay deposit (₹{{ rent_request.deposit_amount|floatformat:0 }})
+                            </a>
+                        {% endif %}
 
                         {% if rent_request.status == 'approved' %}
                             <div class="approved-contact">

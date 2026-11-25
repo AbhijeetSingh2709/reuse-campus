@@ -110,5 +110,17 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="pagination" aria-label="Page navigation" style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:28px;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="detail-button detail-button--secondary" style="min-height:38px;padding:7px 14px;font-size:12px;">← Prev</a>
+        {% endif %}
+        <span style="color:var(--muted);font-size:12px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="detail-button detail-button--secondary" style="min-height:38px;padding:7px 14px;font-size:12px;">Next →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
 </section>
 {% endblock %}

@@ -87,6 +87,7 @@
                         <a href="{% url 'dashboard' %}">Dashboard</a>
                         <a href="{% url 'profile' request.user.username %}">My profile</a>
                         <a href="{% url 'my_items' %}">My listings</a>
+                        <a href="{% url 'wishlist' %}">Saved items</a>
                         <a href="{% url 'edit_profile' %}">Account settings</a>
                         <a href="{% url 'logout' %}">Log out</a>
                     </div>
@@ -141,6 +142,40 @@
         });
     });
 </script>
+{% if request.user.is_authenticated %}
+<script>
+(function () {
+    function syncBadge(parentSelector, count) {
+        const parent = document.querySelector(parentSelector);
+        if (!parent) return;
+        let badge = parent.querySelector(".nav-unread");
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.className = "nav-unread";
+                parent.appendChild(badge);
+            }
+            badge.textContent = count > 99 ? "99+" : String(count);
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    function pollUnreadCounts() {
+        fetch("{% url 'unread_counts_json' %}", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+            .then(function (resp) { return resp.ok ? resp.json() : null; })
+            .then(function (data) {
+                if (!data) return;
+                syncBadge(".nav-messages", data.unread_messages);
+                syncBadge(".notification-trigger", data.unread_notifications);
+            })
+            .catch(function () {});
+    }
+
+    setInterval(pollUnreadCounts, 30000);
+})();
+</script>
+{% endif %}
 {% block extra_js %}{% endblock %}
 </body>
 </html>

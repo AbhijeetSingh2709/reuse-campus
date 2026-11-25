@@ -147,3 +147,27 @@ EMAIL_BACKEND = os.getenv(
     if DEBUG and not EMAIL_HOST
     else 'django.core.mail.backends.smtp.EmailBackend',
 )
+
+# Email domain restriction for registration (defaults to '*' so any valid email can register)
+_raw_allowed_domains = os.getenv('ALLOWED_EMAIL_DOMAINS', '*')
+ALLOWED_EMAIL_DOMAINS = [
+    d.strip().lower()
+    for d in _raw_allowed_domains.split(',')
+    if d.strip()
+]
+
+# Require clicking an email verification link before activating new accounts.
+# Automatically enabled when SMTP is configured, or set REQUIRE_EMAIL_VERIFICATION=True.
+_smtp_configured = bool(
+    EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend'
+    and EMAIL_HOST
+    and EMAIL_FROM_ADDRESS_CONFIGURED
+)
+REQUIRE_EMAIL_VERIFICATION = (
+    os.getenv('REQUIRE_EMAIL_VERIFICATION', '').lower() in {'1', 'true', 'yes'}
+    or _smtp_configured
+)
+
+# Optional Razorpay credentials for rental security deposits (falls back to campus escrow mode if unset)
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET', '')

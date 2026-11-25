@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Pay Security Deposit — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">RENTAL SECURITY ESCROW</span>
+        <h1>Refundable <em>deposit.</em></h1>
+        <p>Your deposit is held safely until the owner marks the item as returned.</p>
+    </div>
+
+    <div class="editorial-form-card">
+        <div class="form-card-intro">
+            <span class="eyebrow">RENTAL SUMMARY</span>
+            <h2>{{ rent_request.item.title }}</h2>
+            <div class="item-summary">
+                <p class="item-summary-price">Deposit: ₹{{ rent_request.deposit_amount|floatformat:0 }}</p>
+                <p>{{ rent_request.start_date|date:"d M Y" }} — {{ rent_request.end_date|date:"d M Y" }}</p>
+            </div>
+        </div>
+
+        <div class="form-notice">
+            {% if razorpay_enabled %}
+                Powered by Razorpay. This refundable deposit will be released automatically when {{ rent_request.item.owner.get_full_name|default:rent_request.item.owner.username }} marks the item returned.
+            {% else %}
+                Campus Escrow Mode (no live Razorpay keys configured). Confirming below records the refundable ₹{{ rent_request.deposit_amount|floatformat:0 }} deposit in escrow until return.
+            {% endif %}
+        </div>
+
+        <form method="POST" id="deposit-payment-form" class="editorial-form">
+            {% csrf_token %}
+            <input type="hidden" name="razorpay_payment_id" id="id_razorpay_payment_id">
+            <input type="hidden" name="razorpay_order_id" id="id_razorpay_order_id">
+            <input type="hidden" name="razorpay_signature" id="id_razorpay_signature">
+
+            <div class="form-actions">
+                <a href="{% url 'dashboard' %}" class="editorial-cancel">Go back</a>
+                {% if razorpay_enabled %}
+                    <button type="button" id="rzp-pay-button" class="editorial-button">Pay ₹{{ rent_request.deposit_amount|floatformat:0 }} deposit ↗</button>
+                {% else %}
+                    <button type="submit" class="editorial-button">Confirm ₹{{ rent_request.deposit_amount|floatformat:0 }} deposit hold ↗</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% if razorpay_enabled %}
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('rzp-pay-button');
+    const form = document.getElementById('deposit-payment-form');
+    if (!btn || !form || typeof Razorpay === 'undefined') return;
+
+    btn.addEventListener('click', function () {
+        const options = {
+            key: "{{ razorpay_key_id|escapejs }}",
+            amount: "{{ deposit_paise }}",
+            currency: "INR",
+            name: "ReUse Campus",
+            description: "Refundable deposit for {{ rent_request.item.title|escapejs }}",
+            handler: function (response) {
+                document.getElementById('id_razorpay_payment_id').value = response.razorpay_payment_id || '';
+                document.getElementById('id_razorpay_order_id').value = response.razorpay_order_id || '';
+                document.getElementById('id_razorpay_signature').value = response.razorpay_signature || '';
+                form.submit();
+            }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+    });
+});
+</script>
+{% endblock %}
+{% endif %}

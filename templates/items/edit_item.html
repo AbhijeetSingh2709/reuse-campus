@@ -42,6 +42,12 @@
                 {{ form.listing_type.errors }}
             </div>
 
+            <div class="form-field">
+                <label for="{{ form.condition.id_for_label }}">Item condition</label>
+                {{ form.condition }}
+                {{ form.condition.errors }}
+            </div>
+
             <div class="form-field" id="price-field">
                 <label for="{{ form.price.id_for_label }}">Selling price</label>
                 {{ form.price }}
@@ -49,11 +55,20 @@
                 {{ form.price.errors }}
             </div>
 
-            <div class="form-field" id="rent-price-field">
-                <label for="{{ form.rent_per_day.id_for_label }}">Rent per day</label>
-                {{ form.rent_per_day }}
-                <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
-                {{ form.rent_per_day.errors }}
+            <div id="rent-price-field" class="editorial-form" style="gap:17px;">
+                <div class="form-field">
+                    <label for="{{ form.rent_per_day.id_for_label }}">Rent per day</label>
+                    {{ form.rent_per_day }}
+                    <small class="field-hint">Whole rupees. The arrows change this by ₹1.</small>
+                    {{ form.rent_per_day.errors }}
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.security_deposit.id_for_label }}">Refundable security deposit (₹) <span>(optional)</span></label>
+                    {{ form.security_deposit }}
+                    <small class="field-hint">Optional refundable deposit held in escrow until return.</small>
+                    {{ form.security_deposit.errors }}
+                </div>
             </div>
 
             <div class="form-field photo-field">
@@ -86,6 +101,30 @@
                     <img id="photo-preview-img" alt="Preview of the newly selected photo">
                     <span>New photo preview — saved when you click Save changes</span>
                 </div>
+            </div>
+
+            <div class="form-field">
+                <label>Additional photos <span>(optional, up to 5)</span></label>
+                <small class="field-hint">Manage or add extra photos for this listing.</small>
+                {{ image_formset.management_form }}
+                {% for img_form in image_formset %}
+                    <div style="margin-top:8px;padding:10px;border:1px dashed var(--line);border-radius:8px;display:grid;gap:8px;">
+                        {{ img_form.id }}
+                        {% if img_form.instance.pk and img_form.instance.image_url %}
+                            <div class="photo-manager__current" style="padding:6px;">
+                                <img src="{{ img_form.instance.image_url }}" alt="Additional photo">
+                                <div>
+                                    <label class="photo-remove" for="{{ img_form.DELETE.id_for_label }}">
+                                        {{ img_form.DELETE }}
+                                        <span>Remove this photo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {{ img_form.image }}
+                        {% if img_form.image.errors %}<p class="field-error">{{ img_form.image.errors }}</p>{% endif %}
+                    </div>
+                {% endfor %}
             </div>
 
             <div class="form-actions">

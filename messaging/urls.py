@@ -27,4 +27,5 @@ urlpatterns = [
     path('<int:conv_id>/', views.conversation_view, name='conversation'),
     path('start/<str:username>/', views.start_conversation, name='start_conversation'),
     path('start/<str:username>/item/<int:item_id>/', views.start_conversation, name='start_conversation_item'),
+    path('unread-counts/', views.unread_counts_json, name='unread_counts_json'),
 ]

@@ -23,6 +23,14 @@ STATUS_CHOICES = [
     ('sold', 'Sold'),
 ]
 
+CONDITION_CHOICES = [
+    ('new', 'Brand New'),
+    ('like_new', 'Like New'),
+    ('good', 'Good'),
+    ('fair', 'Fair'),
+    ('poor', 'Poor'),
+]
+
 
 class Item(models.Model):
     owner = models.ForeignKey(
@@ -40,8 +48,13 @@ class Item(models.Model):
         max_digits=8, decimal_places=2, null=True, blank=True,
         help_text='Price per day (for Rent listings)'
     )
+    security_deposit = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True,
+        help_text='Optional refundable security deposit (for Rent listings)'
+    )
     image = models.ImageField(upload_to='item_images/', blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='good')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -75,3 +88,28 @@ class Item(models.Model):
         if self.listing_type == 'rent' and self.rent_per_day is not None:
             return f'\u20b9{self._rupee_text(self.rent_per_day)}/day'
         return 'Contact for price'
+
+
+class ItemImage(models.Model):
+    """Additional photos for a listing."""
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='extra_images')
+    image = models.ImageField(upload_to='item_images/')
+    order = models.PositiveSmallIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'uploaded_at']
+
+    def __str__(self):
+        return f'Image for {self.item.title} (#{self.order})'
+
+    @property
+    def image_url(self):
+        if not self.image or not self.image.name:
+            return ''
+        try:
+            if not self.image.storage.exists(self.image.name):
+                return ''
+            return self.image.url
+        except (OSError, ValueError):
+            return ''

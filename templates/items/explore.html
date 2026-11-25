@@ -57,6 +57,16 @@
                     </label>
                 </fieldset>
 
+                <div class="filter-field">
+                    <label for="market-condition">Condition</label>
+                    <select id="market-condition" name="condition">
+                        <option value="">Any condition</option>
+                        {% for value, label in conditions %}
+                        <option value="{{ value }}" {% if selected_condition == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <fieldset class="filter-field filter-price-field">
                     <legend>Price (₹/day for rentals)</legend>
                     <div class="filter-price-row">
@@ -95,30 +105,38 @@
             <div class="marketplace-results__top">
                 <div>
                     <span class="eyebrow">A LITTLE SOMETHING FOR EVERYONE</span>
-                    <h2>All listings<span class="marketplace-count" id="marketplace-count">{{ items|length }}</span></h2>
-                    <p id="marketplace-results-count">{{ items|length }} listing{{ items|length|pluralize }} found{% if query %} for “{{ query }}”{% endif %}</p>
+                    <h2>All listings<span class="marketplace-count" id="marketplace-count">{{ page_obj.paginator.count }}</span></h2>
+                    <p id="marketplace-results-count">{{ page_obj.paginator.count }} listing{{ page_obj.paginator.count|pluralize }} found{% if query %} for “{{ query }}”{% endif %}</p>
                 </div>
                 <a href="{% url 'post_item' %}" class="marketplace-sell-link">Have something to share? <strong>List an item ↗</strong></a>
             </div>
 
             <div class="items-grid marketplace-grid">
                 {% for item in items %}
-                <a href="{% url 'item_detail' item.pk %}" class="item-card marketplace-card" data-market-price="{% if item.listing_type == 'sell' %}{{ item.price|default:0 }}{% else %}{{ item.rent_per_day|default:0 }}{% endif %}">
-                    <div class="item-card__image marketplace-card__image">
-                        {% if item.image_url %}
-                            <img src="{{ item.image_url }}" alt="{{ item.title }}">
-                        {% else %}
-                            <div class="item-card__no-image"><span>✳</span><small>Waiting for a new home</small></div>
-                        {% endif %}
-                        <span class="badge badge--{{ item.listing_type }}">{{ item.get_listing_type_display }}</span>
-                    </div>
-                    <div class="item-card__body">
-                        <span class="item-card__category">{{ item.get_category_display }}</span>
-                        <h3>{{ item.title }}</h3>
-                        <p class="item-card__price">{{ item.get_display_price }}</p>
-                        <div class="item-card__seller">Listed by {{ item.owner.get_full_name|default:item.owner.username }}</div>
-                    </div>
-                </a>
+                <div style="position:relative;display:flex;min-width:0;">
+                    <a href="{% url 'item_detail' item.pk %}" class="item-card marketplace-card" style="width:100%;" data-market-price="{% if item.listing_type == 'sell' %}{{ item.price|default:0 }}{% else %}{{ item.rent_per_day|default:0 }}{% endif %}">
+                        <div class="item-card__image marketplace-card__image">
+                            {% if item.image_url %}
+                                <img src="{{ item.image_url }}" alt="{{ item.title }}">
+                            {% else %}
+                                <div class="item-card__no-image"><span>✳</span><small>Waiting for a new home</small></div>
+                            {% endif %}
+                            <span class="badge badge--{{ item.listing_type }}">{{ item.get_listing_type_display }}</span>
+                        </div>
+                        <div class="item-card__body">
+                            <span class="item-card__category">{{ item.get_category_display }} · {{ item.get_condition_display }}</span>
+                            <h3>{{ item.title }}</h3>
+                            <p class="item-card__price">{{ item.get_display_price }}</p>
+                            <div class="item-card__seller">Listed by {{ item.owner.get_full_name|default:item.owner.username }}</div>
+                        </div>
+                    </a>
+                    {% if request.user.is_authenticated and request.user != item.owner %}
+                    <form method="POST" action="{% url 'toggle_wishlist' item.pk %}" class="wishlist-form" style="position:absolute;top:10px;right:10px;z-index:2;margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="wishlist-btn" aria-label="Save item" title="Save to wishlist" style="width:30px;height:30px;border:1px solid var(--line);border-radius:50%;background:rgba(255,255,255,0.94);color:var(--blue);display:grid;place-items:center;cursor:pointer;font-size:14px;padding:0;">{% if item.pk in wishlisted_ids %}♥{% else %}♡{% endif %}</button>
+                    </form>
+                    {% endif %}
+                </div>
                 {% empty %}
                 <div class="marketplace-empty">
                     <span class="marketplace-empty__symbol">⌕</span>
@@ -131,16 +149,45 @@
                     {% endif %}
                 </div>
                 {% endfor %}
-                {% if items %}
-                <div class="marketplace-empty marketplace-client-empty" id="marketplace-price-empty" hidden>
-                    <span class="eyebrow">NO MATCHES</span>
-                    <h3>No listings in this price range.</h3>
-                    <p>Try a different range or clear your filters.</p>
-                    <a href="{% url 'explore' %}" class="btn btn--outline">Clear filters</a>
-                </div>
-                {% endif %}
             </div>
+
+            {% if page_obj.has_other_pages %}
+            <nav class="pagination" aria-label="Page navigation" style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:28px;">
+                {% if page_obj.has_previous %}
+                    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if selected_type %}type={{ selected_type|urlencode }}&{% endif %}{% if selected_condition %}condition={{ selected_condition|urlencode }}&{% endif %}{% if min_price %}min_price={{ min_price|urlencode }}&{% endif %}{% if max_price %}max_price={{ max_price|urlencode }}&{% endif %}{% if sort %}sort={{ sort|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}" class="detail-button detail-button--secondary" style="min-height:38px;padding:7px 14px;font-size:12px;">← Prev</a>
+                {% endif %}
+                <span style="color:var(--muted);font-size:12px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if selected_type %}type={{ selected_type|urlencode }}&{% endif %}{% if selected_condition %}condition={{ selected_condition|urlencode }}&{% endif %}{% if min_price %}min_price={{ min_price|urlencode }}&{% endif %}{% if max_price %}max_price={{ max_price|urlencode }}&{% endif %}{% if sort %}sort={{ sort|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}" class="detail-button detail-button--secondary" style="min-height:38px;padding:7px 14px;font-size:12px;">Next →</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.wishlist-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btn = form.querySelector('.wishlist-btn');
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form),
+            })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (data && btn) {
+                    btn.textContent = data.saved ? '♥' : '♡';
+                }
+            })
+            .catch(function () { form.submit(); });
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -8,6 +8,13 @@ REQUEST_STATUS = [
     ('rejected', 'Rejected'),
 ]
 
+DEPOSIT_STATUS_CHOICES = [
+    ('not_required', 'Not Required'),
+    ('pending', 'Deposit Pending'),
+    ('held', 'Deposit Held'),
+    ('released', 'Deposit Refunded'),
+]
+
 
 class BuyRequest(models.Model):
     """A request to buy an item listed for sale."""
@@ -21,7 +28,6 @@ class BuyRequest(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['item', 'requester']
 
     def __str__(self):
         return f'BuyRequest: {self.requester.username} -> {self.item.title} [{self.status}]'
@@ -40,12 +46,20 @@ class RentRequest(models.Model):
         choices=REQUEST_STATUS + [('returned', 'Returned')],
         default='pending'
     )
+    deposit_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    deposit_status = models.CharField(
+        max_length=20,
+        choices=DEPOSIT_STATUS_CHOICES,
+        default='not_required',
+    )
+    payment_reference = models.CharField(max_length=120, blank=True)
+    deposit_paid_at = models.DateTimeField(null=True, blank=True)
+    deposit_released_at = models.DateTimeField(null=True, blank=True)
     message = models.TextField(blank=True, help_text='Optional message to the owner')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['item', 'requester']
 
     def __str__(self):
         return f'RentRequest: {self.requester.username} -> {self.item.title} [{self.status}]'

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — ReUse Campus{% endblock %}
+
+{% block content %}
+<section class="editorial-page">
+    <div class="editorial-heading">
+        <span class="eyebrow">ADMIN ONLY</span>
+        <h1>Platform <em>analytics.</em></h1>
+        <p>Overview of marketplace activity.</p>
+    </div>
+
+    <div class="dashboard-shortcuts" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:32px;">
+        <div style="padding:15px;border:1px solid var(--line);border-radius:10px;background:white;">
+            <span style="color:var(--blue);font-size:10px;">USERS</span>
+            <strong style="display:block;font-size:22px;margin:4px 0;">{{ total_users }}</strong>
+            <small style="color:var(--muted);font-size:11px;">{{ new_users_this_month }} joined this month</small>
+        </div>
+        <div style="padding:15px;border:1px solid var(--line);border-radius:10px;background:white;">
+            <span style="color:var(--blue);font-size:10px;">LISTINGS</span>
+            <strong style="display:block;font-size:22px;margin:4px 0;">{{ total_items }}</strong>
+            <small style="color:var(--muted);font-size:11px;">{{ items_this_month }} listed this month</small>
+        </div>
+        <div style="padding:15px;border:1px solid var(--line);border-radius:10px;background:white;">
+            <span style="color:var(--blue);font-size:10px;">AVAILABLE</span>
+            <strong style="display:block;font-size:22px;margin:4px 0;">{{ available_items }}</strong>
+            <small style="color:var(--muted);font-size:11px;">{{ sold_items }} sold · {{ rented_items }} rented</small>
+        </div>
+        <div style="padding:15px;border:1px solid var(--line);border-radius:10px;background:white;">
+            <span style="color:var(--blue);font-size:10px;">REQUESTS</span>
+            <strong style="display:block;font-size:22px;margin:4px 0;">{{ total_buy_requests|add:total_rent_requests }}</strong>
+            <small style="color:var(--muted);font-size:11px;">{{ approved_buy }} buy · {{ approved_rent }} rent approved</small>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2 style="margin-bottom:14px;font-size:20px;letter-spacing:-.03em;">Popular categories</h2>
+        {% for cat, count in popular_categories %}
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span style="width:140px;font-size:12px;color:var(--muted);">{{ cat }}</span>
+            <div style="flex:1;height:8px;border-radius:4px;background:var(--surface-soft);">
+                <div style="height:100%;border-radius:4px;background:var(--blue);width:{% widthratio count total_items 100 %}%;"></div>
+            </div>
+            <span style="font-size:12px;font-weight:700;width:30px;text-align:right;">{{ count }}</span>
+        </div>
+        {% empty %}
+        <p class="dashboard-empty">No listings yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
+        <h2 style="margin-bottom:14px;font-size:20px;letter-spacing:-.03em;">Recent listings</h2>
+        {% if recent_items %}
+        <div class="dashboard-list">
+            {% for item in recent_items %}
+            <div class="dashboard-list-row">
+                {% if item.image_url %}<img src="{{ item.image_url }}" alt="">{% else %}<div class="dashboard-image-placeholder">RC</div>{% endif %}
+                <div class="dashboard-list-info">
+                    <strong>{{ item.title }}</strong>
+                    <span>{{ item.owner.get_full_name|default:item.owner.username }} · {{ item.get_category_display }}</span>
+                </div>
+                <span class="status-label status-{{ item.status }}">{{ item.get_status_display }}</span>
+                <a href="{% url 'item_detail' item.pk %}" class="text-link">View →</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="dashboard-empty">No listings yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
