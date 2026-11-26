@@ -29,9 +29,24 @@ ALLOWED_HOSTS = [
 ]
 
 render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME")
-
 if render_host:
     ALLOWED_HOSTS.append(render_host)
+
+railway_host = os.getenv("RAILWAY_PUBLIC_DOMAIN")
+if railway_host:
+    ALLOWED_HOSTS.append(railway_host)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if railway_host:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{railway_host}")
+if render_host:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{render_host}")
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 INSTALLED_APPS = [
@@ -122,7 +137,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', BASE_DIR / 'media'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
